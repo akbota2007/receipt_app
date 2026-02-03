@@ -81,7 +81,7 @@ npm install
 Create a `.env` file in the root directory:
 
 ```env
-MONGO_URI=mongodb+srv://akbota170607_db_user:Akbota2007@cluster0.widshqx.mongodb.net/receipt-app?retryWrites=true&w=majority
+receipt-app?retryWrites=true&w=majority
 JWT_SECRET=d9407e69f2d0e28fd37b069e0d89155b0828fd8c5e0e17202904a6f0bcdae7e8
 JWT_EXPIRE=7d
 PORT=3001
