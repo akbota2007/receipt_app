@@ -26,10 +26,12 @@ A beautiful, full-stack web application for managing receipts and tracking expen
 
 ### Landing Page
 ![Landing Page](screenshots/screenshot1.png)
+
 Beautiful gradient landing page with call-to-action buttons.
 
 ### Dashboard
-![Dashboard](screenshots/screenshot2.png, screenshots/screenshot3.png)
+![Dashboard - Image 1](screenshots/screenshot2.png)  
+![Dashboard - Image 2](screenshots/screenshot3.png)
 - Statistics cards showing total receipts, expenses, and monthly summary.
 - Advanced filters for category, date range, and search.
 - Beautiful receipt cards with images and details.
