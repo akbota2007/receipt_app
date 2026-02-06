@@ -77,22 +77,6 @@ cd receipt-app
 npm install
 ```
 
-### 3. Configure environment variables
-Create a `.env` file in the root directory:
-
-```env
-receipt-app?retryWrites=true&w=majority
-JWT_SECRET=d9407e69f2d0e28fd37b069e0d89155b0828fd8c5e0e17202904a6f0bcdae7e8
-JWT_EXPIRE=7d
-PORT=3001
-
-# Email Configuration (Optional)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASSWORD=your_app_password
-EMAIL_FROM=Receipt App <noreply@receiptapp.com>
-```
 
 ### 4. Run the application
 
