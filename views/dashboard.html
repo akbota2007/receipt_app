@@ -28,6 +28,12 @@
     <div class="dashboard-header">
       <h1>My Receipts</h1>
       <div class="header-actions">
+        <select id="baseCurrencySelector" class="form-control" style="width: auto; height: 40px;">
+          <option value="KZT">Display in KZT</option>
+          <option value="USD">Display in USD</option>
+          <option value="EUR">Display in EUR</option>
+        </select>
+
         <button class="btn btn-secondary" id="exportCsvBtn">📥 Export CSV</button>
         <button class="btn btn-primary" id="addReceiptBtn">+ Add Receipt</button>
       </div>

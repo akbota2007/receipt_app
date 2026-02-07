@@ -4,6 +4,7 @@
 const API_URL = window.location.origin + '/api';
 let receipts = [];
 let editingReceiptId = null;
+let currentBaseCurrency = 'KZT'; // Валюта отображения по умолчанию
 
 // Статичные курсы валют (соответствуют бэкенду)
 const EXCHANGE_RATES = {
@@ -67,11 +68,13 @@ function updateCharts() {
 
   if (!categoryCtx || !merchantCtx) return;
 
-  // Category Totals with KZT Conversion
+  // Группировка по категориям С КОНВЕРТАЦИЕЙ в выбранную базовую валюту
   const categoryTotals = receipts.reduce((acc, r) => {
-    const rate = EXCHANGE_RATES[r.currency] || 1;
-    const amountInKZT = r.amount * rate;
-    acc[r.category] = (acc[r.category] || 0) + amountInKZT;
+    const rateToKZT = EXCHANGE_RATES[r.currency] || 1;
+    const amountInKZT = r.amount * rateToKZT;
+    const amountInBase = amountInKZT / EXCHANGE_RATES[currentBaseCurrency];
+
+    acc[r.category] = (acc[r.category] || 0) + amountInBase;
     return acc;
   }, {});
 
@@ -97,7 +100,7 @@ function updateCharts() {
         tooltip: {
           callbacks: {
             label: function(context) {
-              return ` ${context.label}: ${formatCurrency(context.raw, 'KZT')}`;
+              return ` ${context.label}: ${formatCurrency(context.raw, currentBaseCurrency)}`;
             }
           }
         }
@@ -105,10 +108,11 @@ function updateCharts() {
     }
   });
 
-  // Merchant Bar Chart with KZT Conversion
+  // Топ-5 Мерчантов С КОНВЕРТАЦИЕЙ в выбранную базовую валюту
   const merchantTotals = receipts.reduce((acc, r) => {
-    const rate = EXCHANGE_RATES[r.currency] || 1;
-    acc[r.merchant] = (acc[r.merchant] || 0) + (r.amount * rate);
+    const rateToKZT = EXCHANGE_RATES[r.currency] || 1;
+    const amountInBase = (r.amount * rateToKZT) / EXCHANGE_RATES[currentBaseCurrency];
+    acc[r.merchant] = (acc[r.merchant] || 0) + amountInBase;
     return acc;
   }, {});
 
@@ -122,7 +126,7 @@ function updateCharts() {
     data: {
       labels: sortedMerchants.map(m => m[0]),
       datasets: [{
-        label: 'Spent (KZT)',
+        label: `Spent (${currentBaseCurrency})`,
         data: sortedMerchants.map(m => m[1]),
         backgroundColor: '#667eea',
         borderRadius: 8
@@ -207,7 +211,10 @@ function getFilters() {
 
 function updateStats(data) {
   document.getElementById('totalReceipts').textContent = data.count;
-  document.getElementById('totalAmount').textContent = formatCurrency(data.totalAmount || 0, 'KZT');
+
+  // Конвертируем общий тотал из KZT в выбранную валюту отображения
+  const totalInBase = (data.totalAmount || 0) / EXCHANGE_RATES[currentBaseCurrency];
+  document.getElementById('totalAmount').textContent = formatCurrency(totalInBase, currentBaseCurrency);
 
   const now = new Date();
   const thisMonthTotalKZT = receipts
@@ -220,7 +227,8 @@ function updateStats(data) {
         return sum + (r.amount * rate);
       }, 0);
 
-  document.getElementById('thisMonth').textContent = formatCurrency(thisMonthTotalKZT, 'KZT');
+  const thisMonthInBase = thisMonthTotalKZT / EXCHANGE_RATES[currentBaseCurrency];
+  document.getElementById('thisMonth').textContent = formatCurrency(thisMonthInBase, currentBaseCurrency);
 }
 
 function renderReceipts() {
@@ -351,7 +359,6 @@ async function editReceipt(id) {
       document.getElementById('description').value = r.description || '';
       document.getElementById('imageUrl').value = r.imageUrl || '';
 
-      // ИСПРАВЛЕНО: передаем классы раздельно
       document.getElementById('receiptModal').classList.add('show');
     }
   } catch (err) {
@@ -378,12 +385,21 @@ async function toggleLike(id) {
 }
 
 /**
- * Filters & Export
+ * Filters & Export & Base Currency Switcher
  */
 document.getElementById('exportCsvBtn').addEventListener('click', exportToCSV);
 document.getElementById('categoryFilter').addEventListener('change', fetchReceipts);
 document.getElementById('startDate').addEventListener('change', fetchReceipts);
 document.getElementById('endDate').addEventListener('change', fetchReceipts);
+
+// Слушатель для переключателя базовой валюты отображения
+document.getElementById('baseCurrencySelector').addEventListener('change', (e) => {
+  currentBaseCurrency = e.target.value;
+  // Пересчитываем тотал на основе текущих загруженных данных
+  const totalKZT = receipts.reduce((sum, r) => sum + (r.amount * (EXCHANGE_RATES[r.currency] || 1)), 0);
+  updateStats({ count: receipts.length, totalAmount: totalKZT });
+  updateCharts();
+});
 
 let searchTimeout;
 document.getElementById('searchInput').addEventListener('input', () => {
