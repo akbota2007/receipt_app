@@ -106,18 +106,31 @@ exports.getReceipt = async (req, res, next) => {
     const receipt = await Receipt.findById(req.params.id);
 
     if (!receipt) {
-      return res.status(404).json({ success: false, message: 'Receipt not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Receipt not found'
+      });
     }
 
-    if (receipt.user.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Not authorized' });
+    if (
+      receipt.user.toString() !== req.user.id &&
+      req.user.role !== 'admin'
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized'
+      });
     }
 
-    res.status(200).json({ success: true, data: receipt });
+    res.status(200).json({
+      success: true,
+      data: receipt
+    });
   } catch (error) {
     next(error);
   }
 };
+
 
 // @desc    Update receipt
 // @route   PUT /api/receipts/:id

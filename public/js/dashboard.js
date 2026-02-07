@@ -4,6 +4,8 @@
 const API_URL = window.location.origin + '/api';
 let receipts = [];
 let editingReceiptId = null;
+let currentView = 'all'; // all | favorites
+
 
 // Статичные курсы валют (соответствуют бэкенду)
 const EXCHANGE_RATES = {
@@ -198,6 +200,7 @@ async function fetchReceipts() {
       updateStats(data);
       renderReceipts();
       updateCharts();
+      generateSmartInsight(receipts);
     } else {
       showAlert(data.message || 'Error loading receipts', 'danger');
     }
@@ -262,37 +265,98 @@ function renderReceipts() {
   const container = document.getElementById('receiptsContainer');
   if (!container) return;
 
-  if (receipts.length === 0) {
-    container.innerHTML = `<div class="empty-state"><h3>No receipts found</h3><button class="btn btn-primary" onclick="openModal()">Add Receipt</button></div>`;
+  let visibleReceipts = receipts;
+
+  if (currentView === 'favorites') {
+    visibleReceipts = receipts.filter(r =>
+      r.likedBy?.includes(user.id)
+    );
+  }
+
+  if (visibleReceipts.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <h3>No favorite receipts yet ❤️</h3>
+        <p>Tap the heart icon to add receipts to favorites</p>
+      </div>
+    `;
     return;
   }
 
-  container.innerHTML = `<div class="receipts-grid">
-    ${receipts.map(r => `
-      <div class="receipt-card">
-        ${r.imageUrl ? `<img src="${r.imageUrl}" class="receipt-image" onerror="this.src='https://via.placeholder.com/300x180?text=Receipt'">` :
-      `<div class="receipt-image" style="display:flex;align-items:center;justify-content:center;font-size:3rem;background:var(--purple-grad);color:white;">📄</div>`}
-        <div class="receipt-content">
-          <div class="receipt-header">
-            <div><div class="receipt-title">${r.title}</div><div class="receipt-merchant">${r.merchant}</div></div>
-            <div class="receipt-amount">${formatCurrency(r.amount, r.currency)}</div>
-          </div>
-          <div class="receipt-details">
-            <span class="category-badge ${getCategoryClass(r.category)}">${r.category}</span>
-            <span class="receipt-detail-value">${formatDate(r.date)}</span>
-          </div>
-          <div class="receipt-actions">
-            <button class="icon-btn like ${r.likedBy?.includes(user.id) ? 'liked' : ''}" onclick="toggleLike('${r._id}')">
-              ${r.likedBy?.includes(user.id) ? '❤️' : '🤍'}
-            </button>
-            <button class="icon-btn edit" onclick="editReceipt('${r._id}')">✏️</button>
-            <button class="icon-btn delete" onclick="deleteReceipt('${r._id}')">🗑️</button>
+  container.innerHTML = `
+    <div class="receipts-grid">
+      ${visibleReceipts.map(r => `
+        <div class="receipt-card">
+          ${r.imageUrl
+            ? `<img src="${r.imageUrl}" class="receipt-image">`
+            : `<div class="receipt-image">📄</div>`}
+          
+          <div class="receipt-content">
+            <div class="receipt-header">
+              <div>
+                <div class="receipt-title">${r.title}</div>
+                <div class="receipt-merchant">${r.merchant}</div>
+              </div>
+              <div class="receipt-amount">${formatCurrency(r.amount, r.currency)}</div>
+            </div>
+
+            <div class="receipt-details">
+              <span class="category-badge ${getCategoryClass(r.category)}">${r.category}</span>
+              <span>${formatDate(r.date)}</span>
+            </div>
+
+            <div class="receipt-actions">
+              <button class="icon-btn like ${r.likedBy?.includes(user.id) ? 'liked' : ''}"
+                onclick="toggleLike('${r._id}')">
+                ${r.likedBy?.includes(user.id) ? '❤️' : '🤍'}
+              </button>
+              <button class="icon-btn edit" onclick="editReceipt('${r._id}')">✏️</button>
+              <button class="icon-btn delete" onclick="deleteReceipt('${r._id}')">🗑️</button>
+            </div>
           </div>
         </div>
-      </div>
-    `).join('')}
-  </div>`;
+      `).join('')}
+    </div>
+  `;
 }
+
+const startDateInput = document.getElementById('startDate');
+const endDateInput = document.getElementById('endDate');
+
+function validateDateRange() {
+  const startDate = startDateInput.value;
+  const endDate = endDateInput.value;
+
+  // если одна из дат не выбрана — всё ок
+  if (!startDate || !endDate) {
+    clearDateError();
+    return true;
+  }
+
+  if (startDate > endDate) {
+    showDateError('From Date cannot be later than To Date');
+    return false;
+  }
+
+  clearDateError();
+  return true;
+}
+
+function showDateError(message) {
+  const alert = document.getElementById('alert');
+  alert.textContent = message;
+  alert.className = 'alert alert-danger';
+  alert.style.display = 'block';
+}
+
+function clearDateError() {
+  const alert = document.getElementById('alert');
+  alert.style.display = 'none';
+}
+
+startDateInput.addEventListener('change', validateDateRange);
+endDateInput.addEventListener('change', validateDateRange);
+
 
 /**
  * Modal & Form Logic
@@ -349,30 +413,63 @@ document.getElementById('receiptForm')?.addEventListener('submit', async (e) => 
   } catch (err) { showAlert('Error saving receipt', 'danger'); }
 });
 
-/**
- * Actions
- */
+document.getElementById('allTab')?.addEventListener('click', () => {
+  currentView = 'all';
+  setActiveTab('allTab');
+  renderReceipts();
+});
+
+document.getElementById('favoritesTab')?.addEventListener('click', () => {
+  currentView = 'favorites';
+  setActiveTab('favoritesTab');
+  renderReceipts();
+});
+
+function setActiveTab(id) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
 async function editReceipt(id) {
   try {
-    const res = await fetch(`${API_URL}/receipts/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
-    const data = await res.json();
-    if (data.success) {
-      const r = data.data;
-      editingReceiptId = id;
-      document.getElementById('modalTitle').textContent = 'Edit Receipt';
-      document.getElementById('title').value = r.title;
-      document.getElementById('merchant').value = r.merchant;
-      document.getElementById('amount').value = r.amount;
-      document.getElementById('currency').value = r.currency;
-      document.getElementById('category').value = r.category;
-      document.getElementById('date').value = r.date.split('T')[0];
-      document.getElementById('paymentMethod').value = r.paymentMethod;
-      document.getElementById('description').value = r.description || '';
-      document.getElementById('imageUrl').value = r.imageUrl || '';
-      document.getElementById('receiptModal').classList.add('show');
+    console.log("EDIT ID:", id);
+
+    const res = await fetch(`${API_URL}/receipts/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
     }
-  } catch (err) { showAlert('Error loading details', 'danger'); }
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error('Backend returned success = false');
+    }
+
+    const r = data.data;
+    editingReceiptId = id;
+
+    document.getElementById('modalTitle').textContent = 'Edit Receipt';
+    document.getElementById('title').value = r.title;
+    document.getElementById('merchant').value = r.merchant;
+    document.getElementById('amount').value = r.amount;
+    document.getElementById('currency').value = r.currency;
+    document.getElementById('category').value = r.category;
+    document.getElementById('date').value = r.date.split('T')[0];
+    document.getElementById('paymentMethod').value = r.paymentMethod;
+    document.getElementById('description').value = r.description || '';
+
+    document.getElementById('receiptModal').classList.add('show');
+  } catch (err) {
+    console.error("EDIT ERROR:", err.message);
+    showAlert(`Error loading details`, 'danger');
+  }
 }
+
 
 async function deleteReceipt(id) {
   if (confirm('Delete this receipt?')) {
@@ -384,6 +481,62 @@ async function deleteReceipt(id) {
 async function toggleLike(id) {
   await fetch(`${API_URL}/receipts/${id}/like`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
   fetchReceipts();
+}
+function generateSmartInsight(receipts) {
+  if (!receipts || receipts.length === 0) return;
+
+  let total = 0;
+  const categoryTotals = {};
+
+  receipts.forEach(r => {
+    const rateToKZT = EXCHANGE_RATES[r.currency] || 1;
+    const amountInBase =
+      (r.amount * rateToKZT) / EXCHANGE_RATES[currentBaseCurrency];
+
+    total += amountInBase;
+    categoryTotals[r.category] =
+      (categoryTotals[r.category] || 0) + amountInBase;
+  });
+
+  let topCategory = '';
+  let topAmount = 0;
+
+  for (const cat in categoryTotals) {
+    if (categoryTotals[cat] > topAmount) {
+      topAmount = categoryTotals[cat];
+      topCategory = cat;
+    }
+  }
+
+  const percent = Math.round((topAmount / total) * 100);
+
+  showSmartInsight(topCategory, percent, topAmount, total);
+}
+function showSmartInsight(category, percent, categoryAmount, total) {
+  const box = document.getElementById('smartInsight');
+  const text = document.getElementById('insightText');
+
+  let emoji = '📦';
+  if (category.includes('Food')) emoji = '🍔';
+  if (category.includes('Shopping')) emoji = '🛍️';
+  if (category.includes('Transportation')) emoji = '🚗';
+  if (category.includes('Health')) emoji = '🏥';
+
+  text.innerHTML = `
+    ${emoji} <strong>${category}</strong> accounts for
+    <strong>${percent}%</strong> of your expenses.<br>
+    💰 $${categoryAmount.toFixed(2)} out of $${total.toFixed(2)}
+  `;
+
+  box.style.display = 'block';
+}
+
+function showBudgetInsight(spent, limit) {
+  const percent = (spent / limit) * 100;
+
+  if (percent < 50) return '🟢 Budget is under control';
+  if (percent < 80) return '🟡 Keep an eye on your budget';
+  return '🔴 You are close to your budget limit';
 }
 
 /**
