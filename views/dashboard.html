@@ -7,24 +7,29 @@
   <link rel="stylesheet" href="/css/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* Маленький фикс для кнопок в заголовке */
-    .dashboard-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
+    /* Inline styles for header actions alignment */
     .header-actions {
       display: flex;
       gap: 10px;
+      align-items: center;
     }
+    .theme-btn {
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50%;
+      transition: background 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Simple secondary button style if not in style.css */
     .btn-secondary {
-      background-color: #f1f5f9;
-      color: #475569;
-      border: 1px solid #e2e8f0;
-    }
-    .btn-secondary:hover {
-      background-color: #e2e8f0;
+      background-color: var(--border-color);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
     }
   </style>
 </head>
@@ -34,6 +39,10 @@
     <div class="navbar-content">
       <a href="/dashboard" class="logo">📝 Receipt App</a>
       <div class="nav-menu">
+        <button id="themeToggle" class="theme-btn" title="Toggle Dark/Light Mode">
+          🌙
+        </button>
+
         <span class="nav-link" id="userName">User</span>
         <img src="https://ui-avatars.com/api/?name=User&background=667eea&color=fff&size=40" alt="User" class="user-avatar" id="userAvatar">
         <button class="btn btn-danger btn-small" id="logoutBtn">Logout</button>
@@ -86,14 +95,14 @@
 
     <div class="stats-grid" style="margin-top: 2rem; margin-bottom: 2rem;">
       <div class="stat-card" style="min-height: 400px;">
-        <h3 style="margin-bottom: 1rem; color: #1e293b;">Expenses by Category</h3>
+        <h3 style="margin-bottom: 1rem;">Expenses by Category</h3>
         <div style="position: relative; height: 300px;">
           <canvas id="categoryChart"></canvas>
         </div>
       </div>
 
       <div class="stat-card" style="min-height: 400px;">
-        <h3 style="margin-bottom: 1rem; color: #1e293b;">Top Merchants</h3>
+        <h3 style="margin-bottom: 1rem;">Top Merchants</h3>
         <div style="position: relative; height: 300px;">
           <canvas id="merchantChart"></canvas>
         </div>

@@ -5,30 +5,51 @@ const API_URL = window.location.origin + '/api';
 let receipts = [];
 let editingReceiptId = null;
 
-// Global chart instances for Chart.js to allow updates/destruction
+// Global chart instances for Chart.js
 let categoryChart = null;
 let merchantChart = null;
 
 /**
  * Authentication & Navigation Logic
  */
-// Check for JWT token in local storage
 const token = localStorage.getItem('token');
 if (!token) {
-  window.location.href = '/login'; // Redirect to login if not authenticated
+  window.location.href = '/login';
 }
 
 const user = JSON.parse(localStorage.getItem('user'));
 
-// Set user-specific information on the UI
+// Set user info
 document.getElementById('userName').textContent = user.username;
 document.getElementById('userAvatar').src = user.avatar;
 
-// Handle user logout
+// Logout handler
 document.getElementById('logoutBtn').addEventListener('click', () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   window.location.href = '/';
+});
+
+/**
+ * Dark Mode Logic
+ */
+const themeToggle = document.getElementById('themeToggle');
+const savedTheme = localStorage.getItem('theme') || 'light';
+
+// Apply theme on initial load
+document.documentElement.setAttribute('data-theme', savedTheme);
+themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+themeToggle.addEventListener('click', () => {
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+  themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+
+  // Refresh charts to adapt to new theme if needed
+  if (receipts.length > 0) updateCharts();
 });
 
 /**
@@ -40,13 +61,12 @@ function updateCharts() {
 
   if (!categoryCtx || !merchantCtx) return;
 
-  // 1. Prepare Data for Category Distribution (Doughnut Chart)
+  // 1. Category Doughnut Chart
   const categoryTotals = receipts.reduce((acc, r) => {
     acc[r.category] = (acc[r.category] || 0) + r.amount;
     return acc;
   }, {});
 
-  // Destroy previous instance to prevent overlapping
   if (categoryChart) categoryChart.destroy();
   categoryChart = new Chart(categoryCtx, {
     type: 'doughnut',
@@ -54,29 +74,23 @@ function updateCharts() {
       labels: Object.keys(categoryTotals),
       datasets: [{
         data: Object.values(categoryTotals),
-        backgroundColor: [
-          '#667eea', '#764ba2', '#10b981', '#f59e0b',
-          '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'
-        ],
+        backgroundColor: ['#667eea', '#764ba2', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'],
         borderWidth: 2
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'right' }
-      }
+      plugins: { legend: { position: 'right', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-main') } } }
     }
   });
 
-  // 2. Prepare Data for Top 5 Merchants (Bar Chart)
+  // 2. Top 5 Merchants Bar Chart
   const merchantTotals = receipts.reduce((acc, r) => {
     acc[r.merchant] = (acc[r.merchant] || 0) + r.amount;
     return acc;
   }, {});
 
-  // Sort merchants by amount and take top 5
   const sortedMerchants = Object.entries(merchantTotals)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
@@ -97,11 +111,10 @@ function updateCharts() {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        y: { beginAtZero: true }
+        y: { beginAtZero: true, ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') } },
+        x: { ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') } }
       },
-      plugins: {
-        legend: { display: false }
-      }
+      plugins: { legend: { display: false } }
     }
   });
 }
@@ -109,124 +122,82 @@ function updateCharts() {
 /**
  * Export Logic
  */
-// Export current (filtered) receipts to CSV file
 function exportToCSV() {
   if (receipts.length === 0) {
     showAlert('No data to export', 'danger');
     return;
   }
 
-  // Define headers for CSV
   const headers = ['Title', 'Merchant', 'Amount', 'Currency', 'Category', 'Date', 'Payment Method'];
-
-  // Format data rows
   const rows = receipts.map(r => [
-    `"${r.title}"`,
-    `"${r.merchant}"`,
-    r.amount,
-    r.currency,
-    `"${r.category}"`,
-    new Date(r.date).toLocaleDateString(),
-    `"${r.paymentMethod}"`
+    `"${r.title}"`, `"${r.merchant}"`, r.amount, r.currency, `"${r.category}"`,
+    new Date(r.date).toLocaleDateString(), `"${r.paymentMethod}"`
   ]);
 
-  // Combine into CSV format
-  const csvContent = [
-    headers.join(','),
-    ...rows.map(row => row.join(','))
-  ].join('\n');
-
-  // Create blob and trigger download
+  const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
-
   link.setAttribute('href', url);
   link.setAttribute('download', `receipts_export_${new Date().toISOString().split('T')[0]}.csv`);
-  link.style.visibility = 'hidden';
-
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-
-  showAlert('Data exported to CSV successfully!', 'success');
+  showAlert('Export successful!', 'success');
 }
 
 /**
  * UI Helper Functions
  */
-// Display temporary alerts (Success/Error)
 function showAlert(message, type = 'success') {
   const alert = document.getElementById('alert');
   alert.textContent = message;
   alert.className = `alert alert-${type} show`;
-
-  setTimeout(() => {
-    alert.classList.remove('show');
-  }, 5000);
+  setTimeout(() => alert.classList.remove('show'), 5000);
 }
 
-// Format numbers into currency strings
 function formatCurrency(amount, currency = 'KZT') {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 0
-  }).format(amount);
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 0 }).format(amount);
 }
 
-// Format ISO date strings to readable format
 function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
+  return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-// Map category names to CSS classes for styling badges
 function getCategoryClass(category) {
   return 'category-' + category.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
 }
 
 /**
- * API Communication (Backend Integration)
+ * API Communication
  */
-// Fetch receipts from the server based on current filters
 async function fetchReceipts() {
   try {
     const { category, startDate, endDate, search } = getFilters();
-
     const params = new URLSearchParams();
     if (category) params.append('category', category);
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     if (search) params.append('search', search);
 
-    const url = `${API_URL}/receipts?${params.toString()}`;
-
-    const response = await fetch(url, {
+    const response = await fetch(`${API_URL}/receipts?${params.toString()}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
-
     const data = await response.json();
 
     if (data.success) {
       receipts = data.data;
       updateStats(data);
       renderReceipts();
-      updateCharts(); // Refresh visual data
+      updateCharts();
     } else {
-      showAlert(data.message || 'Failed to load receipts', 'danger');
+      showAlert(data.message || 'Error loading receipts', 'danger');
     }
   } catch (error) {
-    console.error('Error fetching receipts:', error);
-    showAlert('Failed to load receipts', 'danger');
+    showAlert('Server connection failed', 'danger');
   }
 }
 
-// Gather current values from UI filter inputs
 function getFilters() {
   return {
     category: document.getElementById('categoryFilter').value,
@@ -236,93 +207,58 @@ function getFilters() {
   };
 }
 
-// Calculate and update the top dashboard stats (Totals, This Month)
 function updateStats(data) {
   document.getElementById('totalReceipts').textContent = data.count;
   document.getElementById('totalAmount').textContent = formatCurrency(data.totalAmount || 0);
 
   const now = new Date();
-  const thisMonthReceipts = receipts.filter(r => {
-    const receiptDate = new Date(r.date);
-    return receiptDate.getMonth() === now.getMonth() &&
-        receiptDate.getFullYear() === now.getFullYear();
-  });
-  const thisMonthTotal = thisMonthReceipts.reduce((sum, r) => sum + r.amount, 0);
+  const thisMonthTotal = receipts
+      .filter(r => {
+        const d = new Date(r.date);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      })
+      .reduce((sum, r) => sum + r.amount, 0);
   document.getElementById('thisMonth').textContent = formatCurrency(thisMonthTotal);
 }
 
-// Dynamically generate and inject receipt cards into the HTML container
 function renderReceipts() {
   const container = document.getElementById('receiptsContainer');
-
   if (receipts.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-state-icon">📝</div>
-        <h3>No receipts found</h3>
-        <p>Start by adding your first receipt!</p>
-        <button class="btn btn-primary" onclick="openModal()">Add Receipt</button>
-      </div>
-    `;
+    container.innerHTML = `<div class="empty-state"><h3>No receipts found</h3><button class="btn btn-primary" onclick="openModal()">Add Receipt</button></div>`;
     return;
   }
 
-  container.innerHTML = `
-    <div class="receipts-grid">
-      ${receipts.map(receipt => `
-        <div class="receipt-card">
-          ${receipt.imageUrl ?
-      `<img src="${receipt.imageUrl}" alt="${receipt.title}" class="receipt-image" onerror="this.src='https://via.placeholder.com/400x200/667eea/ffffff?text=Receipt'">` :
-      `<div class="receipt-image" style="display: flex; align-items: center; justify-content: center; font-size: 3rem;">📄</div>`
-  }
-          <div class="receipt-content">
-            <div class="receipt-header">
-              <div>
-                <div class="receipt-title">${receipt.title}</div>
-                <div class="receipt-merchant">${receipt.merchant}</div>
-              </div>
-              <div class="receipt-amount">${formatCurrency(receipt.amount, receipt.currency)}</div>
-            </div>
-            
-            <div class="receipt-details">
-              <div class="receipt-detail">
-                <span class="receipt-detail-label">Category:</span>
-                <span class="category-badge ${getCategoryClass(receipt.category)}">${receipt.category}</span>
-              </div>
-              <div class="receipt-detail">
-                <span class="receipt-detail-label">Date:</span>
-                <span class="receipt-detail-value">${formatDate(receipt.date)}</span>
-              </div>
-              <div class="receipt-detail">
-                <span class="receipt-detail-label">Payment:</span>
-                <span class="receipt-detail-value">${receipt.paymentMethod}</span>
-              </div>
-            </div>
-            
-            ${receipt.description ? `<p style="color: var(--gray); font-size: 0.875rem; margin-bottom: 1rem;">${receipt.description}</p>` : ''}
-            
-            <div class="receipt-actions">
-              <button class="icon-btn like ${receipt.likedBy?.includes(user.id) ? 'liked' : ''}" onclick="toggleLike('${receipt._id}')">
-                ${receipt.likedBy?.includes(user.id) ? '❤️' : '🤍'}
-              </button>
-              <button class="icon-btn edit" onclick="editReceipt('${receipt._id}')">✏️</button>
-              <button class="icon-btn delete" onclick="deleteReceipt('${receipt._id}')">🗑️</button>
-            </div>
+  container.innerHTML = `<div class="receipts-grid">
+    ${receipts.map(r => `
+      <div class="receipt-card">
+        <div class="receipt-content">
+          <div class="receipt-header">
+            <div><div class="receipt-title">${r.title}</div><div class="receipt-merchant">${r.merchant}</div></div>
+            <div class="receipt-amount">${formatCurrency(r.amount, r.currency)}</div>
+          </div>
+          <div class="receipt-details">
+            <span class="category-badge ${getCategoryClass(r.category)}">${r.category}</span>
+            <span class="receipt-detail-value">${formatDate(r.date)}</span>
+          </div>
+          <div class="receipt-actions">
+            <button class="icon-btn like ${r.likedBy?.includes(user.id) ? 'liked' : ''}" onclick="toggleLike('${r._id}')">
+              ${r.likedBy?.includes(user.id) ? '❤️' : '🤍'}
+            </button>
+            <button class="icon-btn edit" onclick="editReceipt('${r._id}')">✏️</button>
+            <button class="icon-btn delete" onclick="deleteReceipt('${r._id}')">🗑️</button>
           </div>
         </div>
-      `).join('')}
-    </div>
-  `;
+      </div>
+    `).join('')}
+  </div>`;
 }
 
 /**
- * Modal & Form Handling
+ * Modal & Event Listeners
  */
 function openModal() {
   document.getElementById('receiptModal').classList.add('show');
-  document.getElementById('modalTitle').textContent = 'Add Receipt';
   document.getElementById('receiptForm').reset();
-  document.getElementById('receiptId').value = '';
   editingReceiptId = null;
   document.getElementById('date').valueAsDate = new Date();
 }
@@ -331,20 +267,11 @@ document.getElementById('closeModal').addEventListener('click', () => {
   document.getElementById('receiptModal').classList.remove('show');
 });
 
-document.getElementById('receiptModal').addEventListener('click', (e) => {
-  if (e.target.id === 'receiptModal') {
-    document.getElementById('receiptModal').classList.remove('show');
-  }
-});
-
 document.getElementById('addReceiptBtn').addEventListener('click', openModal);
-
-// Export button listener
 document.getElementById('exportCsvBtn').addEventListener('click', exportToCSV);
 
 document.getElementById('receiptForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-
   const formData = {
     title: document.getElementById('title').value,
     merchant: document.getElementById('merchant').value,
@@ -357,96 +284,49 @@ document.getElementById('receiptForm').addEventListener('submit', async (e) => {
     imageUrl: document.getElementById('imageUrl').value
   };
 
-  try {
-    const url = editingReceiptId ? `${API_URL}/receipts/${editingReceiptId}` : `${API_URL}/receipts`;
-    const method = editingReceiptId ? 'PUT' : 'POST';
+  const url = editingReceiptId ? `${API_URL}/receipts/${editingReceiptId}` : `${API_URL}/receipts`;
+  const method = editingReceiptId ? 'PUT' : 'POST';
 
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(formData)
-    });
+  const response = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(formData)
+  });
 
-    const data = await response.json();
-
-    if (data.success) {
-      showAlert(editingReceiptId ? 'Receipt updated!' : 'Receipt added!', 'success');
-      document.getElementById('receiptModal').classList.remove('show');
-      fetchReceipts();
-    } else {
-      showAlert(data.message || 'Failed to save receipt', 'danger');
-    }
-  } catch (error) {
-    showAlert('An error occurred', 'danger');
+  if ((await response.json()).success) {
+    document.getElementById('receiptModal').classList.remove('show');
+    fetchReceipts();
   }
 });
 
-/**
- * Interaction Actions
- */
 async function editReceipt(id) {
-  try {
-    const response = await fetch(`${API_URL}/receipts/${id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await response.json();
-    if (data.success) {
-      const receipt = data.data;
-      editingReceiptId = id;
-      document.getElementById('modalTitle').textContent = 'Edit Receipt';
-      document.getElementById('receiptId').value = id;
-      document.getElementById('title').value = receipt.title;
-      document.getElementById('merchant').value = receipt.merchant;
-      document.getElementById('amount').value = receipt.amount;
-      document.getElementById('currency').value = receipt.currency;
-      document.getElementById('category').value = receipt.category;
-      document.getElementById('date').value = receipt.date.split('T')[0];
-      document.getElementById('paymentMethod').value = receipt.paymentMethod;
-      document.getElementById('description').value = receipt.description || '';
-      document.getElementById('imageUrl').value = receipt.imageUrl || '';
-      document.getElementById('receiptModal').classList.add('show');
-    }
-  } catch (error) {
-    showAlert('Failed to load receipt', 'danger');
+  const res = await fetch(`${API_URL}/receipts/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+  const data = await res.json();
+  if (data.success) {
+    const r = data.data;
+    editingReceiptId = id;
+    document.getElementById('modalTitle').textContent = 'Edit Receipt';
+    document.getElementById('title').value = r.title;
+    document.getElementById('merchant').value = r.merchant;
+    document.getElementById('amount').value = r.amount;
+    document.getElementById('category').value = r.category;
+    document.getElementById('date').value = r.date.split('T')[0];
+    document.getElementById('receiptModal').classList.add('show');
   }
 }
 
 async function deleteReceipt(id) {
-  if (!confirm('Are you sure you want to delete this receipt?')) return;
-  try {
-    const response = await fetch(`${API_URL}/receipts/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await response.json();
-    if (data.success) {
-      showAlert('Receipt deleted!', 'success');
-      fetchReceipts();
-    }
-  } catch (error) {
-    showAlert('An error occurred', 'danger');
+  if (confirm('Delete this receipt?')) {
+    await fetch(`${API_URL}/receipts/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    fetchReceipts();
   }
 }
 
 async function toggleLike(id) {
-  try {
-    const response = await fetch(`${API_URL}/receipts/${id}/like`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await response.json();
-    if (data.success) fetchReceipts();
-  } catch (error) {
-    console.error('Error toggling like:', error);
-  }
+  await fetch(`${API_URL}/receipts/${id}/like`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+  fetchReceipts();
 }
 
-/**
- * Listeners for Filters
- */
 document.getElementById('categoryFilter').addEventListener('change', fetchReceipts);
 document.getElementById('startDate').addEventListener('change', fetchReceipts);
 document.getElementById('endDate').addEventListener('change', fetchReceipts);
@@ -457,5 +337,4 @@ document.getElementById('searchInput').addEventListener('input', () => {
   searchTimeout = setTimeout(fetchReceipts, 500);
 });
 
-// Run initial data fetch
 fetchReceipts();
