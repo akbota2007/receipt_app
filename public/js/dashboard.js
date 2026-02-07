@@ -107,6 +107,52 @@ function updateCharts() {
 }
 
 /**
+ * Export Logic
+ */
+// Export current (filtered) receipts to CSV file
+function exportToCSV() {
+  if (receipts.length === 0) {
+    showAlert('No data to export', 'danger');
+    return;
+  }
+
+  // Define headers for CSV
+  const headers = ['Title', 'Merchant', 'Amount', 'Currency', 'Category', 'Date', 'Payment Method'];
+
+  // Format data rows
+  const rows = receipts.map(r => [
+    `"${r.title}"`,
+    `"${r.merchant}"`,
+    r.amount,
+    r.currency,
+    `"${r.category}"`,
+    new Date(r.date).toLocaleDateString(),
+    `"${r.paymentMethod}"`
+  ]);
+
+  // Combine into CSV format
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.join(','))
+  ].join('\n');
+
+  // Create blob and trigger download
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', `receipts_export_${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  showAlert('Data exported to CSV successfully!', 'success');
+}
+
+/**
  * UI Helper Functions
  */
 // Display temporary alerts (Success/Error)
@@ -272,7 +318,6 @@ function renderReceipts() {
 /**
  * Modal & Form Handling
  */
-// Open the Add/Edit Modal
 function openModal() {
   document.getElementById('receiptModal').classList.add('show');
   document.getElementById('modalTitle').textContent = 'Add Receipt';
@@ -282,7 +327,6 @@ function openModal() {
   document.getElementById('date').valueAsDate = new Date();
 }
 
-// Close modal triggers
 document.getElementById('closeModal').addEventListener('click', () => {
   document.getElementById('receiptModal').classList.remove('show');
 });
@@ -295,7 +339,9 @@ document.getElementById('receiptModal').addEventListener('click', (e) => {
 
 document.getElementById('addReceiptBtn').addEventListener('click', openModal);
 
-// Handle form submission for both Create and Update
+// Export button listener
+document.getElementById('exportCsvBtn').addEventListener('click', exportToCSV);
+
 document.getElementById('receiptForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -339,9 +385,8 @@ document.getElementById('receiptForm').addEventListener('submit', async (e) => {
 });
 
 /**
- * Interaction Actions (CRUD & Likes)
+ * Interaction Actions
  */
-// Load specific receipt data into modal for editing
 async function editReceipt(id) {
   try {
     const response = await fetch(`${API_URL}/receipts/${id}`, {
@@ -369,7 +414,6 @@ async function editReceipt(id) {
   }
 }
 
-// Delete a receipt after confirmation
 async function deleteReceipt(id) {
   if (!confirm('Are you sure you want to delete this receipt?')) return;
   try {
@@ -387,7 +431,6 @@ async function deleteReceipt(id) {
   }
 }
 
-// Toggle "Like" status of a receipt
 async function toggleLike(id) {
   try {
     const response = await fetch(`${API_URL}/receipts/${id}/like`, {
@@ -402,18 +445,17 @@ async function toggleLike(id) {
 }
 
 /**
- * Event Listeners for Filters
+ * Listeners for Filters
  */
 document.getElementById('categoryFilter').addEventListener('change', fetchReceipts);
 document.getElementById('startDate').addEventListener('change', fetchReceipts);
 document.getElementById('endDate').addEventListener('change', fetchReceipts);
 
-// Debounced search input (waits 500ms before triggering API call)
 let searchTimeout;
 document.getElementById('searchInput').addEventListener('input', () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(fetchReceipts, 500);
 });
 
-// Run initial data fetch on page load
+// Run initial data fetch
 fetchReceipts();

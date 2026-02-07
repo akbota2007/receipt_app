@@ -6,6 +6,27 @@
   <title>Dashboard - Receipt App</title>
   <link rel="stylesheet" href="/css/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* Маленький фикс для кнопок в заголовке */
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-secondary {
+      background-color: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+    .btn-secondary:hover {
+      background-color: #e2e8f0;
+    }
+  </style>
 </head>
 <body class="dashboard">
 <nav class="navbar">
@@ -25,7 +46,10 @@
   <div class="dashboard-content">
     <div class="dashboard-header">
       <h1>My Receipts</h1>
-      <button class="btn btn-primary" id="addReceiptBtn">+ Add Receipt</button>
+      <div class="header-actions">
+        <button class="btn btn-secondary" id="exportCsvBtn">📥 Export CSV</button>
+        <button class="btn btn-primary" id="addReceiptBtn">+ Add Receipt</button>
+      </div>
     </div>
 
     <div class="stats-grid">
@@ -75,8 +99,6 @@
         </div>
       </div>
     </div>
-
-
 
     <div class="filters">
       <div class="filter-grid">
