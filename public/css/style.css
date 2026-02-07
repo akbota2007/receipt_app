@@ -1,4 +1,3 @@
-/* --- VARIABLES --- */
 :root {
   /* Constant Brand Colors */
   --primary: #667eea;
@@ -51,7 +50,6 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Landing & Auth backgrounds should keep the gradient */
 .landing, .auth-container {
   background: var(--purple-grad);
   color: white;
@@ -70,6 +68,11 @@ body {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* --- LAYOUT --- */
@@ -122,9 +125,7 @@ body {
   justify-content: center;
 }
 
-.theme-btn:hover {
-  background: var(--border-color);
-}
+.theme-btn:hover { background: var(--border-color); }
 
 .nav-link {
   color: var(--text-main);
@@ -183,10 +184,7 @@ body {
   gap: 1rem;
 }
 
-.header-actions {
-  display: flex;
-  gap: 10px;
-}
+.header-actions { display: flex; gap: 10px; }
 
 /* Stats */
 .stats-grid {
@@ -244,22 +242,6 @@ body {
   gap: 1rem;
 }
 
-.form-control {
-  width: 100%;
-  padding: 0.8rem;
-  background-color: var(--input-bg);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  border-radius: 10px;
-  transition: 0.3s;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-}
-
 /* --- RECEIPTS GRID --- */
 .receipts-grid {
   display: grid;
@@ -295,67 +277,111 @@ body {
   display: inline-block;
 }
 
-/* Category Colors (Adapt for dark mode if needed) */
 .category-food-dining { background: #fef3c7; color: #92400e; }
 .category-shopping { background: #dbeafe; color: #1e40af; }
 .category-transportation { background: #fce7f3; color: #9f1239; }
 .category-other { background: #f3f4f6; color: #374151; }
 
-.receipt-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 1rem;
-}
+.receipt-actions { display: flex; gap: 8px; margin-top: 1rem; }
 
 .icon-btn {
-  flex: 1;
-  padding: 8px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--border-color);
-  color: var(--text-main);
-  transition: 0.3s;
+  flex: 1; padding: 8px; border: none; border-radius: 8px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  background: var(--border-color); color: var(--text-main); transition: 0.3s;
 }
 
 .icon-btn:hover { background: var(--primary); color: white; }
 
-/* --- MODAL --- */
+/* --- UNIFIED COMPACT MODAL SYSTEM --- */
 .modal {
   display: none;
   position: fixed;
   z-index: 1000;
   left: 0; top: 0; width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(5px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
 }
 
-.modal.show { display: flex; align-items: center; justify-content: center; }
+.modal.show { display: flex; }
 
 .modal-content {
   background: var(--bg-card);
-  color: var(--text-main);
-  border-radius: 20px;
-  padding: 2rem;
-  width: 90%;
-  max-width: 550px;
+  width: 95%;
+  max-width: 420px; /* Компактная ширина */
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  border-radius: 16px;
   box-shadow: var(--shadow-lg);
-  animation: fadeIn 0.3s ease;
+  position: relative;
+  animation: modalFadeIn 0.3s ease-out;
 }
 
-/* --- ALERTS --- */
-.alert {
-  padding: 1rem;
-  border-radius: 10px;
-  margin-bottom: 1rem;
-  display: none;
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
 }
+
+.modal-header h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+
+/* --- FORM STYLES --- */
+.form-group {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  color: var(--text-muted);
+}
+
+.form-grid-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  align-items: end;
+}
+
+.form-control {
+  width: 100%;
+  height: 38px;
+  padding: 8px 12px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  transition: 0.3s;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+textarea.form-control { height: auto; min-height: 60px; }
+
+.submit-btn {
+  width: 100%; height: 44px; margin-top: 10px;
+  border-radius: 8px; font-weight: 700;
+}
+
+/* --- ALERTS, SPINNERS & UTILS --- */
+.alert { padding: 1rem; border-radius: 10px; margin-bottom: 1rem; display: none; }
 .alert.show { display: block; }
 .alert-success { background: #d1fae5; color: #065f46; border-left: 5px solid var(--success); }
 .alert-danger { background: #fee2e2; color: #991b1b; border-left: 5px solid var(--danger); }
 
-/* --- SPINNER --- */
 .spinner {
   width: 40px; height: 40px;
   border: 4px solid var(--border-color);
@@ -369,4 +395,5 @@ body {
   .dashboard-header { flex-direction: column; align-items: flex-start; }
   .charts-section { grid-template-columns: 1fr; }
   .landing h1 { font-size: 2.5rem; }
+  .form-grid-row { grid-template-columns: 1fr; gap: 0; }
 }
