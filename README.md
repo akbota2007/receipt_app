@@ -25,15 +25,20 @@ A beautiful, full-stack web application for managing receipts and tracking expen
 ## 🎨 Screenshots
 
 ### Landing Page
+![Landing Page](screenshots/screenshot1.png)
+
 Beautiful gradient landing page with call-to-action buttons.
 
 ### Dashboard
-- Statistics cards showing total receipts, expenses, and monthly summary
-- Advanced filters for category, date range, and search
-- Beautiful receipt cards with images and details
+![Dashboard - Image 1](screenshots/screenshot2.png)  
+![Dashboard - Image 2](screenshots/screenshot3.png)
+- Statistics cards showing total receipts, expenses, and monthly summary.
+- Advanced filters for category, date range, and search.
+- Beautiful receipt cards with images and details.
 
 ### Receipt Management
-- Add/Edit receipts with comprehensive form
+![Receipt Card](screenshots/screenshot4.png)
+- Add/Edit receipts with comprehensive form.
 - Multiple payment methods
 - Category badges
 - Like/favorite system
@@ -81,6 +86,7 @@ npm install
 Create a `.env` file in the root directory:
 
 ```env
+receipt-app?retryWrites=true&w=majority
 JWT_SECRET=d9407e69f2d0e28fd37b069e0d89155b0828fd8c5e0e17202904a6f0bcdae7e8
 JWT_EXPIRE=7d
 PORT=3001
