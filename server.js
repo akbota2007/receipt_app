@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const connectDB = require('./backend/config/db');
 const errorHandler = require('./backend/middleware/error');
 const rateLimit = require('express-rate-limit');
@@ -13,6 +14,15 @@ dotenv.config();
 connectDB();
 
 const app = express();
+
+/**
+ * --- НАСТРОЙКА ПАПКИ ДЛЯ ЗАГРУЗОК ---
+ */
+// Создаем папку public/uploads, если она еще не существует
+const uploadDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // Body parser
 app.use(express.json());
@@ -30,6 +40,12 @@ app.use('/api/', limiter);
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
+
+/**
+ * ВАЖНО: Разрешаем доступ к папке с загруженными изображениями
+ * Теперь браузер сможет открыть картинку по пути: http://localhost:3000/uploads/имя_файла.jpg
+ */
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // Mount routers
 app.use('/api/auth', require('./backend/routes/auth'));
@@ -59,5 +75,6 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(`📸 Uploads directory is ready at: ${uploadDir}`);
 });

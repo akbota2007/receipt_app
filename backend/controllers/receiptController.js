@@ -1,4 +1,34 @@
 const Receipt = require('../models/Receipt');
+const path = require('path');
+const fs = require('fs');
+
+/**
+ * --- КОНСТАНТЫ И УТИЛИТЫ ---
+ */
+
+// Статичные курсы валют к KZT
+const EXCHANGE_RATES = {
+  KZT: 1,
+  USD: 450,
+  EUR: 485,
+  RUB: 5
+};
+
+// Функция для физического удаления файла с диска
+const deleteFile = (filePath) => {
+  if (filePath && filePath.startsWith('/uploads/')) {
+    const fullPath = path.join(__dirname, '../../public', filePath);
+    if (fs.existsSync(fullPath)) {
+      fs.unlink(fullPath, (err) => {
+        if (err) console.error('Ошибка при удалении старого файла:', err);
+      });
+    }
+  }
+};
+
+/**
+ * --- КОНТРОЛЛЕРЫ ---
+ */
 
 // @desc    Create new receipt
 // @route   POST /api/receipts
@@ -6,7 +36,12 @@ const Receipt = require('../models/Receipt');
 exports.createReceipt = async (req, res, next) => {
   try {
     req.body.user = req.user.id;
-    
+
+    // Если Multer загрузил файл, сохраняем путь к нему
+    if (req.file) {
+      req.body.imageUrl = `/uploads/${req.file.filename}`;
+    }
+
     const receipt = await Receipt.create(req.body);
 
     res.status(201).json({
@@ -18,31 +53,23 @@ exports.createReceipt = async (req, res, next) => {
   }
 };
 
-// @desc    Get all receipts for logged in user
+// @desc    Get all receipts for logged in user (with conversion)
 // @route   GET /api/receipts
 // @access  Private
 exports.getReceipts = async (req, res, next) => {
   try {
     const { category, startDate, endDate, search } = req.query;
-    
-    // Debug logging
-    console.log('📊 Filters received:', { category, startDate, endDate, search });
-    
+
     let query = { user: req.user.id };
 
-    // Filter by category
-    if (category) {
-      query.category = category;
-    }
+    if (category) query.category = category;
 
-    // Filter by date range
     if (startDate || endDate) {
       query.date = {};
       if (startDate) query.date.$gte = new Date(startDate);
       if (endDate) query.date.$lte = new Date(endDate);
     }
 
-    // Search by title or merchant
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -50,19 +77,20 @@ exports.getReceipts = async (req, res, next) => {
       ];
     }
 
-    console.log('🔍 MongoDB query:', JSON.stringify(query, null, 2));
-
     const receipts = await Receipt.find(query).sort('-date');
 
-    // Calculate statistics
-    const totalAmount = receipts.reduce((sum, receipt) => sum + receipt.amount, 0);
-    
-    console.log('✅ Found receipts:', receipts.length);
+    /**
+     * РАСЧЕТ TOTAL AMOUNT С КОНВЕРТАЦИЕЙ В KZT
+     */
+    const totalAmountKZT = receipts.reduce((sum, receipt) => {
+      const rate = EXCHANGE_RATES[receipt.currency] || 1;
+      return sum + (receipt.amount * rate);
+    }, 0);
 
     res.status(200).json({
       success: true,
       count: receipts.length,
-      totalAmount,
+      totalAmount: totalAmountKZT, // Отправляем сумму в тенге
       data: receipts
     });
   } catch (error) {
@@ -78,24 +106,14 @@ exports.getReceipt = async (req, res, next) => {
     const receipt = await Receipt.findById(req.params.id);
 
     if (!receipt) {
-      return res.status(404).json({
-        success: false,
-        message: 'Receipt not found'
-      });
+      return res.status(404).json({ success: false, message: 'Receipt not found' });
     }
 
-    // Make sure user owns the receipt or is admin
     if (receipt.user.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to access this receipt'
-      });
+      return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 
-    res.status(200).json({
-      success: true,
-      data: receipt
-    });
+    res.status(200).json({ success: true, data: receipt });
   } catch (error) {
     next(error);
   }
@@ -109,18 +127,17 @@ exports.updateReceipt = async (req, res, next) => {
     let receipt = await Receipt.findById(req.params.id);
 
     if (!receipt) {
-      return res.status(404).json({
-        success: false,
-        message: 'Receipt not found'
-      });
+      return res.status(404).json({ success: false, message: 'Receipt not found' });
     }
 
-    // Make sure user owns the receipt
     if (receipt.user.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to update this receipt'
-      });
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    // Если загружено новое фото, удаляем старое
+    if (req.file) {
+      deleteFile(receipt.imageUrl);
+      req.body.imageUrl = `/uploads/${req.file.filename}`;
     }
 
     receipt = await Receipt.findByIdAndUpdate(req.params.id, req.body, {
@@ -128,10 +145,7 @@ exports.updateReceipt = async (req, res, next) => {
       runValidators: true
     });
 
-    res.status(200).json({
-      success: true,
-      data: receipt
-    });
+    res.status(200).json({ success: true, data: receipt });
   } catch (error) {
     next(error);
   }
@@ -145,32 +159,25 @@ exports.deleteReceipt = async (req, res, next) => {
     const receipt = await Receipt.findById(req.params.id);
 
     if (!receipt) {
-      return res.status(404).json({
-        success: false,
-        message: 'Receipt not found'
-      });
+      return res.status(404).json({ success: false, message: 'Receipt not found' });
     }
 
-    // Make sure user owns the receipt or is admin
     if (receipt.user.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to delete this receipt'
-      });
+      return res.status(403).json({ success: false, message: 'Not authorized' });
     }
+
+    // Физически удаляем файл изображения с сервера
+    deleteFile(receipt.imageUrl);
 
     await receipt.deleteOne();
 
-    res.status(200).json({
-      success: true,
-      message: 'Receipt deleted successfully'
-    });
+    res.status(200).json({ success: true, message: 'Receipt deleted successfully' });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Get receipt statistics
+// @desc    Get receipt statistics (with conversion)
 // @route   GET /api/receipts/stats/summary
 // @access  Private
 exports.getStats = async (req, res, next) => {
@@ -179,27 +186,24 @@ exports.getStats = async (req, res, next) => {
 
     const stats = {
       totalReceipts: receipts.length,
-      totalAmount: receipts.reduce((sum, r) => sum + r.amount, 0),
-      byCategory: {},
-      byMonth: {}
+      totalAmountKZT: 0,
+      byCategory: {}
     };
 
-    // Group by category
     receipts.forEach(receipt => {
+      const rate = EXCHANGE_RATES[receipt.currency] || 1;
+      const amountKZT = receipt.amount * rate;
+
+      stats.totalAmountKZT += amountKZT;
+
       if (!stats.byCategory[receipt.category]) {
-        stats.byCategory[receipt.category] = {
-          count: 0,
-          amount: 0
-        };
+        stats.byCategory[receipt.category] = { count: 0, amount: 0 };
       }
       stats.byCategory[receipt.category].count++;
-      stats.byCategory[receipt.category].amount += receipt.amount;
+      stats.byCategory[receipt.category].amount += amountKZT;
     });
 
-    res.status(200).json({
-      success: true,
-      data: stats
-    });
+    res.status(200).json({ success: true, data: stats });
   } catch (error) {
     next(error);
   }
@@ -213,29 +217,18 @@ exports.toggleLike = async (req, res, next) => {
     const receipt = await Receipt.findById(req.params.id);
 
     if (!receipt) {
-      return res.status(404).json({
-        success: false,
-        message: 'Receipt not found'
-      });
+      return res.status(404).json({ success: false, message: 'Receipt not found' });
     }
 
     const likeIndex = receipt.likedBy.indexOf(req.user.id);
-
     if (likeIndex > -1) {
-      // Unlike
       receipt.likedBy.splice(likeIndex, 1);
     } else {
-      // Like
       receipt.likedBy.push(req.user.id);
     }
 
     await receipt.save();
-
-    res.status(200).json({
-      success: true,
-      liked: likeIndex === -1,
-      data: receipt
-    });
+    res.status(200).json({ success: true, liked: likeIndex === -1, data: receipt });
   } catch (error) {
     next(error);
   }

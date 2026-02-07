@@ -127,7 +127,7 @@
       <button class="close-btn" id="closeModal" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-muted)">&times;</button>
     </div>
 
-    <form id="receiptForm" class="styled-form">
+    <form id="receiptForm" class="styled-form" enctype="multipart/form-data">
       <input type="hidden" id="receiptId">
 
       <div class="form-group">
@@ -188,7 +188,13 @@
       </div>
 
       <div class="form-group">
-        <label for="imageUrl">Image URL</label>
+        <label for="imageFile">Upload Receipt Photo</label>
+        <input type="file" id="imageFile" name="image" class="form-control" accept="image/*" style="padding: 5px;">
+        <small style="color: var(--text-muted); margin-top: 4px; display: block;">Choose a file from your device</small>
+      </div>
+
+      <div class="form-group">
+        <label for="imageUrl">Or Image URL</label>
         <input type="url" id="imageUrl" class="form-control" placeholder="https://...">
       </div>
 
