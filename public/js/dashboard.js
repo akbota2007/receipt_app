@@ -28,16 +28,10 @@ if (!token) {
 
 const user = JSON.parse(localStorage.getItem('user'));
 
-// Set user info
-document.getElementById('userName').textContent = user.username;
-document.getElementById('userAvatar').src = user.avatar || `https://ui-avatars.com/api/?name=${user.username}&background=667eea&color=fff`;
-
-// Logout handler
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  window.location.href = '/';
-});
+// Установка информации о пользователе
+if (document.getElementById('userName')) {
+  document.getElementById('userName').textContent = user.username;
+}
 
 /**
  * Dark Mode Logic
@@ -45,19 +39,32 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 const themeToggle = document.getElementById('themeToggle');
 const savedTheme = localStorage.getItem('theme') || 'light';
 
+// Применяем тему сразу при загрузке
 document.documentElement.setAttribute('data-theme', savedTheme);
-themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+if (themeToggle) {
+  themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
 
-themeToggle.addEventListener('click', () => {
-  const currentTheme = document.documentElement.getAttribute('data-theme');
-  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  themeToggle.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-  document.documentElement.setAttribute('data-theme', newTheme);
-  localStorage.setItem('theme', newTheme);
-  themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
 
-  if (receipts.length > 0) updateCharts();
-});
+    if (receipts.length > 0) updateCharts();
+  });
+}
+
+// Logout handler
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/';
+  });
+}
 
 /**
  * Data Visualization (Charts)
@@ -68,12 +75,10 @@ function updateCharts() {
 
   if (!categoryCtx || !merchantCtx) return;
 
-  // Группировка по категориям С КОНВЕРТАЦИЕЙ в выбранную базовую валюту
+  // Группировка по категориям С КОНВЕРТАЦИЕЙ
   const categoryTotals = receipts.reduce((acc, r) => {
     const rateToKZT = EXCHANGE_RATES[r.currency] || 1;
-    const amountInKZT = r.amount * rateToKZT;
-    const amountInBase = amountInKZT / EXCHANGE_RATES[currentBaseCurrency];
-
+    const amountInBase = (r.amount * rateToKZT) / EXCHANGE_RATES[currentBaseCurrency];
     acc[r.category] = (acc[r.category] || 0) + amountInBase;
     return acc;
   }, {});
@@ -99,16 +104,14 @@ function updateCharts() {
         },
         tooltip: {
           callbacks: {
-            label: function(context) {
-              return ` ${context.label}: ${formatCurrency(context.raw, currentBaseCurrency)}`;
-            }
+            label: (context) => ` ${context.label}: ${formatCurrency(context.raw, currentBaseCurrency)}`
           }
         }
       }
     }
   });
 
-  // Топ-5 Мерчантов С КОНВЕРТАЦИЕЙ в выбранную базовую валюту
+  // Топ-5 Мерчантов
   const merchantTotals = receipts.reduce((acc, r) => {
     const rateToKZT = EXCHANGE_RATES[r.currency] || 1;
     const amountInBase = (r.amount * rateToKZT) / EXCHANGE_RATES[currentBaseCurrency];
@@ -149,6 +152,7 @@ function updateCharts() {
  */
 function showAlert(message, type = 'success') {
   const alert = document.getElementById('alert');
+  if (!alert) return;
   alert.textContent = message;
   alert.className = `alert alert-${type} show`;
   setTimeout(() => alert.classList.remove('show'), 5000);
@@ -175,12 +179,8 @@ function getCategoryClass(category) {
  */
 async function fetchReceipts() {
   try {
-    const { category, startDate, endDate, search } = getFilters();
-    const params = new URLSearchParams();
-    if (category) params.append('category', category);
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    if (search) params.append('search', search);
+    const filters = getFilters();
+    const params = new URLSearchParams(filters);
 
     const response = await fetch(`${API_URL}/receipts?${params.toString()}`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -202,43 +202,37 @@ async function fetchReceipts() {
 
 function getFilters() {
   return {
-    category: document.getElementById('categoryFilter').value,
-    startDate: document.getElementById('startDate').value,
-    endDate: document.getElementById('endDate').value,
-    search: document.getElementById('searchInput').value
+    category: document.getElementById('categoryFilter')?.value || '',
+    startDate: document.getElementById('startDate')?.value || '',
+    endDate: document.getElementById('endDate')?.value || '',
+    search: document.getElementById('searchInput')?.value || ''
   };
 }
 
 /**
- * Исправленная функция updateStats с динамической логикой бюджета
+ * Логика статистики и бюджета
  */
 function updateStats(data) {
-  // Получаем бюджет из localStorage или используем дефолтный
   const monthlyBudgetKZT = parseInt(localStorage.getItem('monthlyBudget')) || 200000;
 
-  document.getElementById('totalReceipts').textContent = data.count;
-
-  // 1. Общий баланс в выбранной валюте
+  // 1. Общие показатели
   const totalInBase = (data.totalAmount || 0) / EXCHANGE_RATES[currentBaseCurrency];
+  document.getElementById('totalReceipts').textContent = data.count;
   document.getElementById('totalAmount').textContent = formatCurrency(totalInBase, currentBaseCurrency);
 
-  // 2. Расчет за текущий месяц (в KZT для логики бюджета)
+  // 2. Расчет за текущий месяц
   const now = new Date();
   const thisMonthTotalKZT = receipts
       .filter(r => {
         const d = new Date(r.date);
         return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
       })
-      .reduce((sum, r) => {
-        const rate = EXCHANGE_RATES[r.currency] || 1;
-        return sum + (r.amount * rate);
-      }, 0);
+      .reduce((sum, r) => sum + (r.amount * (EXCHANGE_RATES[r.currency] || 1)), 0);
 
-  // Показываем "This Month" в выбранной валюте
   const thisMonthInBase = thisMonthTotalKZT / EXCHANGE_RATES[currentBaseCurrency];
   document.getElementById('thisMonth').textContent = formatCurrency(thisMonthInBase, currentBaseCurrency);
 
-  // --- ЛОГИКА БЮДЖЕТА ---
+  // 3. Прогресс-бар бюджета
   const percent = Math.min((thisMonthTotalKZT / monthlyBudgetKZT) * 100, 100);
   const progressBar = document.getElementById('budgetProgressBar');
   const budgetPercent = document.getElementById('budgetPercent');
@@ -247,12 +241,10 @@ function updateStats(data) {
     progressBar.style.width = `${percent}%`;
     budgetPercent.textContent = `${Math.round((thisMonthTotalKZT / monthlyBudgetKZT) * 100)}%`;
 
-    // Смена цвета
     if (percent > 90) progressBar.style.backgroundColor = '#ef4444';
     else if (percent > 70) progressBar.style.backgroundColor = '#f59e0b';
     else progressBar.style.backgroundColor = '#10b981';
 
-    // Текстовые подписи бюджета
     const limitInBase = monthlyBudgetKZT / EXCHANGE_RATES[currentBaseCurrency];
     document.getElementById('budgetSpentText').textContent = `Spent: ${formatCurrency(thisMonthInBase, currentBaseCurrency)}`;
     document.getElementById('budgetLimitText').textContent = `Limit: ${formatCurrency(limitInBase, currentBaseCurrency)} ⚙️`;
@@ -261,6 +253,8 @@ function updateStats(data) {
 
 function renderReceipts() {
   const container = document.getElementById('receiptsContainer');
+  if (!container) return;
+
   if (receipts.length === 0) {
     container.innerHTML = `<div class="empty-state"><h3>No receipts found</h3><button class="btn btn-primary" onclick="openModal()">Add Receipt</button></div>`;
     return;
@@ -269,11 +263,8 @@ function renderReceipts() {
   container.innerHTML = `<div class="receipts-grid">
     ${receipts.map(r => `
       <div class="receipt-card">
-        ${r.imageUrl ? `
-          <img src="${r.imageUrl}" alt="${r.title}" class="receipt-image" onerror="this.src='https://via.placeholder.com/300x180?text=Receipt'">
-        ` : `
-          <div class="receipt-image" style="display: flex; align-items: center; justify-content: center; font-size: 3rem; background: var(--purple-grad); color: white;">📄</div>
-        `}
+        ${r.imageUrl ? `<img src="${r.imageUrl}" class="receipt-image" onerror="this.src='https://via.placeholder.com/300x180?text=Receipt'">` :
+      `<div class="receipt-image" style="display:flex;align-items:center;justify-content:center;font-size:3rem;background:var(--purple-grad);color:white;">📄</div>`}
         <div class="receipt-content">
           <div class="receipt-header">
             <div><div class="receipt-title">${r.title}</div><div class="receipt-merchant">${r.merchant}</div></div>
@@ -297,28 +288,31 @@ function renderReceipts() {
 }
 
 /**
- * Modal Handling
+ * Modal & Form Logic
  */
 function openModal() {
   editingReceiptId = null;
-  document.getElementById('modalTitle').textContent = 'Add Receipt';
-  document.getElementById('receiptForm').reset();
-  document.getElementById('date').valueAsDate = new Date();
-  document.getElementById('receiptModal').classList.add('show');
+  const modal = document.getElementById('receiptModal');
+  const form = document.getElementById('receiptForm');
+  if (modal && form) {
+    document.getElementById('modalTitle').textContent = 'Add Receipt';
+    form.reset();
+    document.getElementById('date').valueAsDate = new Date();
+    modal.classList.add('show');
+  }
 }
 
-document.getElementById('closeModal').addEventListener('click', () => {
-  document.getElementById('receiptModal').classList.remove('show');
+document.getElementById('closeModal')?.addEventListener('click', () => {
+  document.getElementById('receiptModal')?.classList.remove('show');
 });
 
-document.getElementById('addReceiptBtn').addEventListener('click', openModal);
+document.getElementById('addReceiptBtn')?.addEventListener('click', openModal);
 
-/**
- * Form Submission
- */
-document.getElementById('receiptForm').addEventListener('submit', async (e) => {
+document.getElementById('receiptForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const formData = new FormData();
+  const formData = new FormData(e.target);
+
+  // Добавляем поля вручную, если они не в FormData
   formData.append('title', document.getElementById('title').value);
   formData.append('merchant', document.getElementById('merchant').value);
   formData.append('amount', document.getElementById('amount').value);
@@ -341,16 +335,17 @@ document.getElementById('receiptForm').addEventListener('submit', async (e) => {
       headers: { 'Authorization': `Bearer ${token}` },
       body: formData
     });
-    if ((await response.json()).success) {
+    const result = await response.json();
+    if (result.success) {
       document.getElementById('receiptModal').classList.remove('show');
       fetchReceipts();
       showAlert(editingReceiptId ? 'Receipt updated!' : 'Receipt added!');
     }
-  } catch (err) { showAlert('Server error occurred', 'danger'); }
+  } catch (err) { showAlert('Error saving receipt', 'danger'); }
 });
 
 /**
- * Edit, Delete, Like
+ * Actions
  */
 async function editReceipt(id) {
   try {
@@ -371,7 +366,7 @@ async function editReceipt(id) {
       document.getElementById('imageUrl').value = r.imageUrl || '';
       document.getElementById('receiptModal').classList.add('show');
     }
-  } catch (err) { showAlert('Failed to load receipt', 'danger'); }
+  } catch (err) { showAlert('Error loading details', 'danger'); }
 }
 
 async function deleteReceipt(id) {
@@ -387,25 +382,26 @@ async function toggleLike(id) {
 }
 
 /**
- * Events
+ * Event Listeners
  */
-document.getElementById('exportCsvBtn').addEventListener('click', exportToCSV);
-document.getElementById('categoryFilter').addEventListener('change', fetchReceipts);
-document.getElementById('startDate').addEventListener('change', fetchReceipts);
-document.getElementById('endDate').addEventListener('change', fetchReceipts);
-
-document.getElementById('baseCurrencySelector').addEventListener('change', (e) => {
+document.getElementById('baseCurrencySelector')?.addEventListener('change', (e) => {
   currentBaseCurrency = e.target.value;
   const totalKZT = receipts.reduce((sum, r) => sum + (r.amount * (EXCHANGE_RATES[r.currency] || 1)), 0);
   updateStats({ count: receipts.length, totalAmount: totalKZT });
   updateCharts();
 });
 
+document.getElementById('categoryFilter')?.addEventListener('change', fetchReceipts);
+document.getElementById('startDate')?.addEventListener('change', fetchReceipts);
+document.getElementById('endDate')?.addEventListener('change', fetchReceipts);
+
 let searchTimeout;
-document.getElementById('searchInput').addEventListener('input', () => {
+document.getElementById('searchInput')?.addEventListener('input', () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(fetchReceipts, 500);
 });
+
+document.getElementById('exportCsvBtn')?.addEventListener('click', exportToCSV);
 
 function exportToCSV() {
   if (receipts.length === 0) return showAlert('No data to export', 'danger');
@@ -415,9 +411,8 @@ function exportToCSV() {
   const blob = new Blob([csvContent], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = 'receipts.csv';
-  a.click();
+  a.href = url; a.download = 'receipts.csv'; a.click();
 }
 
+// Запуск
 fetchReceipts();
