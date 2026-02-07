@@ -2,42 +2,171 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Profile Settings - Receipt App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - Receipt App</title>
   <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .settings-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+
+    /* Стили вкладок */
+    .tabs-nav {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 25px;
+      background: var(--bg-card);
+      padding: 8px;
+      border-radius: 15px;
+      border: 1px solid var(--border-color);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+    .tab-btn.active {
+      background: var(--purple-grad);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    /* Контент вкладок */
+    .tab-content { display: none; animation: fadeIn 0.4s ease; }
+    .tab-content.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .profile-card {
+      background: var(--bg-card);
+      border-radius: 20px;
+      padding: 30px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    }
+    .icon-box {
+      width: 45px; height: 45px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; color: white; margin-bottom: 20px;
+    }
+    .btn-save {
+      background: var(--purple-grad); color: white; border: none;
+      padding: 15px 30px; border-radius: 12px; font-weight: 700;
+      cursor: pointer; width: 100%; margin-top: 20px;
+    }
+    .danger-zone {
+      border: 2px dashed #ef4444; background: rgba(239, 68, 68, 0.05);
+    }
+  </style>
 </head>
 <body class="dashboard">
+
 <nav class="navbar">
   <div class="container">
     <div class="navbar-content">
       <a href="/dashboard" class="logo">📝 Receipt App</a>
       <div class="nav-menu">
-        <a href="/dashboard" class="btn btn-secondary btn-small">Back to Dashboard</a>
+        <a href="/dashboard" class="btn btn-secondary btn-small">← Back to Dashboard</a>
       </div>
     </div>
   </div>
 </nav>
 
-<div class="container" style="max-width: 600px; margin-top: 3rem;">
-  <div class="stat-card">
-    <h2 style="margin-bottom: 1.5rem;">User Profile Settings</h2>
-    <form id="profileForm" class="styled-form">
-      <div class="form-group">
-        <label>Username</label>
-        <input type="text" id="profileUsername" class="form-control" required>
-      </div>
+<div class="settings-container">
+  <h1 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 25px;">Settings</h1>
 
-      <div class="form-group">
-        <label>Monthly Budget (KZT)</label>
-        <input type="number" id="profileBudget" class="form-control" placeholder="e.g. 200000" required>
-        <small style="color: var(--text-muted)">This limit will be used for the progress bar on your dashboard.</small>
-      </div>
-
-      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Save Changes</button>
-    </form>
-    <div id="profileAlert" class="alert" style="margin-top: 1rem;"></div>
+  <div class="tabs-nav">
+    <button class="tab-btn active" onclick="openTab(event, 'general')">👤 General</button>
+    <button class="tab-btn" onclick="openTab(event, 'finance')">💰 Financial</button>
+    <button class="tab-btn" onclick="openTab(event, 'data')">⚠️ Data</button>
   </div>
+
+  <form id="profileForm">
+    <div id="general" class="tab-content active">
+      <div class="profile-card">
+        <div class="icon-box" style="background: var(--purple-grad);">👤</div>
+        <h2 style="margin-bottom: 20px;">Account Information</h2>
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="profileUsername" class="form-control" required>
+        </div>
+        <div class="form-group" style="margin-top: 15px;">
+          <label>Email Address</label>
+          <input type="email" id="profileEmail" class="form-control" readonly style="opacity: 0.6; cursor: not-allowed;">
+        </div>
+      </div>
+    </div>
+
+    <div id="finance" class="tab-content">
+      <div class="profile-card">
+        <div class="icon-box" style="background: #10b981;">💰</div>
+        <h2 style="margin-bottom: 20px;">Financial Limits</h2>
+        <div class="form-group">
+          <label>Monthly Budget (KZT)</label>
+          <input type="number" id="profileBudget" class="form-control" required>
+        </div>
+        <div class="form-group" style="margin-top: 15px;">
+          <label>Preferred Currency</label>
+          <select id="profileDefaultCurrency" class="form-control">
+            <option value="KZT">KZT - Tenge</option>
+            <option value="USD">USD - Dollar</option>
+            <option value="EUR">EUR - Euro</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-save">Save All Changes</button>
+  </form>
+
+  <div id="data" class="tab-content">
+    <div class="profile-card danger-zone">
+      <div class="icon-box" style="background: #ef4444;">⚠️</div>
+      <h2 style="margin-bottom: 10px; color: #ef4444;">Data Management</h2>
+      <p style="color: var(--text-muted); margin-bottom: 20px;">Manage your exports and permanent actions.</p>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button id="exportDataBtn" class="btn btn-secondary">📥 Export Backup</button>
+        <button id="clearDataBtn" class="btn btn-danger">🗑️ Delete All Receipts</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="profileAlert" class="alert" style="margin-top: 20px;"></div>
 </div>
 
 <script src="/js/profile.js"></script>
+<script>
+  // Функция для переключения вкладок
+  function openTab(evt, tabName) {
+    const tabContents = document.getElementsByClassName("tab-content");
+    for (let i = 0; i < tabContents.length; i++) {
+      tabContents[i].classList.remove("active");
+    }
+
+    const tabButtons = document.getElementsByClassName("tab-btn");
+    for (let i = 0; i < tabButtons.length; i++) {
+      tabButtons[i].classList.remove("active");
+    }
+
+    document.getElementById(tabName).classList.add("active");
+    evt.currentTarget.classList.add("active");
+
+    // Скрываем/показываем кнопку Save в зависимости от вкладки
+    const saveBtn = document.querySelector(".btn-save");
+    if (tabName === 'data') {
+      saveBtn.style.display = 'none';
+    } else {
+      saveBtn.style.display = 'block';
+    }
+  }
+</script>
 </body>
 </html>

@@ -28,9 +28,22 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'premium', 'admin'],
     default: 'user'
   },
+  // --- НОВЫЕ ПОЛЯ ДЛЯ ПРОФИЛЯ ---
+  budget: {
+    type: Number,
+    default: 200000 // Лимит по умолчанию в тенге
+  },
+  defaultCurrency: {
+    type: String,
+    enum: ['KZT', 'USD', 'EUR'],
+    default: 'KZT'
+  },
+  // ------------------------------
   avatar: {
     type: String,
-    default: 'https://ui-avatars.com/api/?name=User&background=667eea&color=fff&size=200'
+    default: function() {
+      return `https://ui-avatars.com/api/?name=${this.username}&background=667eea&color=fff&size=200`;
+    }
   },
   favorites: [{
     type: mongoose.Schema.Types.ObjectId,

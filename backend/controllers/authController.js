@@ -22,7 +22,6 @@ exports.register = async (req, res, next) => {
       password
     });
 
-    // Send welcome email (optional)
     try {
       await sendWelcomeEmail(user.email, user.username);
     } catch (emailError) {
@@ -39,7 +38,9 @@ exports.register = async (req, res, next) => {
         username: user.username,
         email: user.email,
         role: user.role,
-        avatar: user.avatar
+        avatar: user.avatar,
+        budget: user.budget,
+        defaultCurrency: user.defaultCurrency
       }
     });
   } catch (error) {
@@ -82,7 +83,40 @@ exports.login = async (req, res, next) => {
         username: user.username,
         email: user.email,
         role: user.role,
-        avatar: user.avatar
+        avatar: user.avatar,
+        budget: user.budget, // Добавлено
+        defaultCurrency: user.defaultCurrency // Добавлено
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+exports.updateProfile = async (req, res, next) => {
+  try {
+    const { username, budget, defaultCurrency } = req.body;
+
+    // Находим пользователя по ID (из токена) и обновляем поля
+    const user = await User.findByIdAndUpdate(
+        req.user.id,
+        { username, budget, defaultCurrency },
+        { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        budget: user.budget,
+        defaultCurrency: user.defaultCurrency
       }
     });
   } catch (error) {
@@ -93,7 +127,7 @@ exports.login = async (req, res, next) => {
 // Send welcome email
 const sendWelcomeEmail = async (email, username) => {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-    return; // Skip if email not configured
+    return;
   }
 
   const transporter = nodemailer.createTransport({

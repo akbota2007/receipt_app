@@ -4,7 +4,6 @@
 const API_URL = window.location.origin + '/api';
 let receipts = [];
 let editingReceiptId = null;
-let currentBaseCurrency = 'KZT'; // Валюта отображения по умолчанию
 
 // Статичные курсы валют (соответствуют бэкенду)
 const EXCHANGE_RATES = {
@@ -26,11 +25,21 @@ if (!token) {
   window.location.href = '/login';
 }
 
+// Получаем актуальные данные пользователя
 const user = JSON.parse(localStorage.getItem('user'));
 
-// Установка информации о пользователе
+// Устанавливаем валюту отображения из профиля (MongoDB) или KZT по умолчанию
+let currentBaseCurrency = user.defaultCurrency || 'KZT';
+
+// Установка информации о пользователе в шапке
 if (document.getElementById('userName')) {
   document.getElementById('userName').textContent = user.username;
+}
+
+// Синхронизируем селектор валюты на странице с данными из базы
+const currencySelector = document.getElementById('baseCurrencySelector');
+if (currencySelector) {
+  currencySelector.value = currentBaseCurrency;
 }
 
 /**
@@ -39,7 +48,6 @@ if (document.getElementById('userName')) {
 const themeToggle = document.getElementById('themeToggle');
 const savedTheme = localStorage.getItem('theme') || 'light';
 
-// Применяем тему сразу при загрузке
 document.documentElement.setAttribute('data-theme', savedTheme);
 if (themeToggle) {
   themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
@@ -75,7 +83,6 @@ function updateCharts() {
 
   if (!categoryCtx || !merchantCtx) return;
 
-  // Группировка по категориям С КОНВЕРТАЦИЕЙ
   const categoryTotals = receipts.reduce((acc, r) => {
     const rateToKZT = EXCHANGE_RATES[r.currency] || 1;
     const amountInBase = (r.amount * rateToKZT) / EXCHANGE_RATES[currentBaseCurrency];
@@ -111,7 +118,6 @@ function updateCharts() {
     }
   });
 
-  // Топ-5 Мерчантов
   const merchantTotals = receipts.reduce((acc, r) => {
     const rateToKZT = EXCHANGE_RATES[r.currency] || 1;
     const amountInBase = (r.amount * rateToKZT) / EXCHANGE_RATES[currentBaseCurrency];
@@ -210,10 +216,11 @@ function getFilters() {
 }
 
 /**
- * Логика статистики и бюджета
+ * Логика статистики и бюджета (Интеграция с MongoDB)
  */
 function updateStats(data) {
-  const monthlyBudgetKZT = parseInt(localStorage.getItem('monthlyBudget')) || 200000;
+  // Получаем лимит бюджета напрямую из объекта пользователя (из базы)
+  const monthlyBudgetKZT = user.budget || 200000;
 
   // 1. Общие показатели
   const totalInBase = (data.totalAmount || 0) / EXCHANGE_RATES[currentBaseCurrency];
@@ -310,9 +317,7 @@ document.getElementById('addReceiptBtn')?.addEventListener('click', openModal);
 
 document.getElementById('receiptForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const formData = new FormData(e.target);
-
-  // Добавляем поля вручную, если они не в FormData
+  const formData = new FormData();
   formData.append('title', document.getElementById('title').value);
   formData.append('merchant', document.getElementById('merchant').value);
   formData.append('amount', document.getElementById('amount').value);
@@ -414,5 +419,5 @@ function exportToCSV() {
   a.href = url; a.download = 'receipts.csv'; a.click();
 }
 
-// Запуск
+// Запуск приложения
 fetchReceipts();
