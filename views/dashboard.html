@@ -8,194 +8,205 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body class="dashboard">
-  <!-- Navbar -->
-  <nav class="navbar">
-    <div class="container">
-      <div class="navbar-content">
-        <a href="/" class="logo">📝 Receipt App</a>
-        <div class="nav-menu">
-          <span class="nav-link" id="userName">User</span>
-          <img src="https://ui-avatars.com/api/?name=User&background=667eea&color=fff&size=40" alt="User" class="user-avatar" id="userAvatar">
-          <button class="btn btn-danger btn-small" id="logoutBtn">Logout</button>
-        </div>
-      </div>
-    </div>
-  </nav>
-
-  <!-- Main Content -->
+<nav class="navbar">
   <div class="container">
-    <div class="dashboard-content">
-      <!-- Header -->
-      <div class="dashboard-header">
-        <h1>My Receipts</h1>
-        <button class="btn btn-primary" id="addReceiptBtn">+ Add Receipt</button>
-      </div>
-
-      <!-- Stats Cards -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-card-header">
-            <div>
-              <div class="stat-value" id="totalReceipts">0</div>
-              <div class="stat-label">Total Receipts</div>
-            </div>
-            <div class="stat-icon purple">📊</div>
-          </div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-card-header">
-            <div>
-              <div class="stat-value" id="totalAmount">$0</div>
-              <div class="stat-label">Total Expenses</div>
-            </div>
-            <div class="stat-icon green">💰</div>
-          </div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-card-header">
-            <div>
-              <div class="stat-value" id="thisMonth">$0</div>
-              <div class="stat-label">This Month</div>
-            </div>
-            <div class="stat-icon orange">📅</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Filters -->
-      <div class="filters">
-        <div class="filter-grid">
-          <div class="filter-item">
-            <label for="categoryFilter">Category</label>
-            <select id="categoryFilter" class="form-control">
-              <option value="">All Categories</option>
-              <option value="Food & Dining">Food & Dining</option>
-              <option value="Shopping">Shopping</option>
-              <option value="Transportation">Transportation</option>
-              <option value="Entertainment">Entertainment</option>
-              <option value="Health">Health</option>
-              <option value="Bills & Utilities">Bills & Utilities</option>
-              <option value="Travel">Travel</option>
-              <option value="Education">Education</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          
-          <div class="filter-item">
-            <label for="startDate">From Date</label>
-            <input type="date" id="startDate" class="form-control">
-          </div>
-          
-          <div class="filter-item">
-            <label for="endDate">To Date</label>
-            <input type="date" id="endDate" class="form-control">
-          </div>
-          
-          <div class="filter-item">
-            <label for="searchInput">Search</label>
-            <input type="text" id="searchInput" class="form-control" placeholder="Search receipts...">
-          </div>
-        </div>
-      </div>
-
-      <!-- Alert -->
-      <div id="alert" class="alert"></div>
-
-      <!-- Receipts Grid -->
-      <div id="receiptsContainer">
-        <div class="loading">
-          <div class="spinner"></div>
-        </div>
+    <div class="navbar-content">
+      <a href="/dashboard" class="logo">📝 Receipt App</a>
+      <div class="nav-menu">
+        <span class="nav-link" id="userName">User</span>
+        <img src="https://ui-avatars.com/api/?name=User&background=667eea&color=fff&size=40" alt="User" class="user-avatar" id="userAvatar">
+        <button class="btn btn-danger btn-small" id="logoutBtn">Logout</button>
       </div>
     </div>
   </div>
+</nav>
 
-  <!-- Add/Edit Receipt Modal -->
-  <div id="receiptModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 id="modalTitle">Add Receipt</h2>
-        <button class="close-btn" id="closeModal">&times;</button>
+<div class="container">
+  <div class="dashboard-content">
+    <div class="dashboard-header">
+      <h1>My Receipts</h1>
+      <button class="btn btn-primary" id="addReceiptBtn">+ Add Receipt</button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-value" id="totalReceipts">0</div>
+            <div class="stat-label">Total Receipts</div>
+          </div>
+          <div class="stat-icon purple">📊</div>
+        </div>
       </div>
-      
-      <form id="receiptForm">
-        <input type="hidden" id="receiptId">
-        
-        <div class="form-group">
-          <label for="title">Title *</label>
-          <input type="text" id="title" class="form-control" placeholder="e.g., Lunch at Restaurant" required>
+
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-value" id="totalAmount">$0</div>
+            <div class="stat-label">Total Expenses</div>
+          </div>
+          <div class="stat-icon green">💰</div>
         </div>
-        
-        <div class="form-group">
-          <label for="merchant">Merchant *</label>
-          <input type="text" id="merchant" class="form-control" placeholder="e.g., Starbucks" required>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-value" id="thisMonth">$0</div>
+            <div class="stat-label">This Month</div>
+          </div>
+          <div class="stat-icon orange">📅</div>
         </div>
-        
-        <div class="form-group">
-          <label for="amount">Amount *</label>
-          <input type="number" id="amount" class="form-control" placeholder="0.00" step="0.01" min="0" required>
+      </div>
+    </div>
+
+    <div class="stats-grid" style="margin-top: 2rem; margin-bottom: 2rem;">
+      <div class="stat-card" style="min-height: 400px;">
+        <h3 style="margin-bottom: 1rem; color: #1e293b;">Expenses by Category</h3>
+        <div style="position: relative; height: 300px;">
+          <canvas id="categoryChart"></canvas>
         </div>
-        
-        <div class="form-group">
-          <label for="currency">Currency</label>
-          <select id="currency" class="form-control">
-            <option value="USD">USD - US Dollar</option>
-            <option value="EUR">EUR - Euro</option>
-            <option value="GBP">GBP - British Pound</option>
-            <option value="KZT" selected>KZT - Kazakhstani Tenge</option>
-            <option value="RUB">RUB - Russian Ruble</option>
+      </div>
+
+      <div class="stat-card" style="min-height: 400px;">
+        <h3 style="margin-bottom: 1rem; color: #1e293b;">Top Merchants</h3>
+        <div style="position: relative; height: 300px;">
+          <canvas id="merchantChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+
+
+    <div class="filters">
+      <div class="filter-grid">
+        <div class="filter-item">
+          <label for="categoryFilter">Category</label>
+          <select id="categoryFilter" class="form-control">
+            <option value="">All Categories</option>
+            <option value="Food & Dining">Food & Dining</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Transportation">Transportation</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Health">Health</option>
+            <option value="Bills & Utilities">Bills & Utilities</option>
+            <option value="Travel">Travel</option>
+            <option value="Education">Education</option>
+            <option value="Other">Other</option>
           </select>
         </div>
-        
-        <div class="form-group">
-          <label for="category">Category *</label>
-          <select id="category" class="form-control" required>
-            <option value="">Select a category</option>
-            <option value="Food & Dining">🍔 Food & Dining</option>
-            <option value="Shopping">🛍️ Shopping</option>
-            <option value="Transportation">🚗 Transportation</option>
-            <option value="Entertainment">🎬 Entertainment</option>
-            <option value="Health">🏥 Health</option>
-            <option value="Bills & Utilities">💡 Bills & Utilities</option>
-            <option value="Travel">✈️ Travel</option>
-            <option value="Education">📚 Education</option>
-            <option value="Other">📦 Other</option>
-          </select>
+
+        <div class="filter-item">
+          <label for="startDate">From Date</label>
+          <input type="date" id="startDate" class="form-control">
         </div>
-        
-        <div class="form-group">
-          <label for="date">Date *</label>
-          <input type="date" id="date" class="form-control" required>
+
+        <div class="filter-item">
+          <label for="endDate">To Date</label>
+          <input type="date" id="endDate" class="form-control">
         </div>
-        
-        <div class="form-group">
-          <label for="paymentMethod">Payment Method</label>
-          <select id="paymentMethod" class="form-control">
-            <option value="Cash">💵 Cash</option>
-            <option value="Credit Card">💳 Credit Card</option>
-            <option value="Debit Card">💳 Debit Card</option>
-            <option value="Digital Wallet">📱 Digital Wallet</option>
-            <option value="Bank Transfer">🏦 Bank Transfer</option>
-          </select>
+
+        <div class="filter-item">
+          <label for="searchInput">Search</label>
+          <input type="text" id="searchInput" class="form-control" placeholder="Search receipts...">
         </div>
-        
-        <div class="form-group">
-          <label for="description">Description</label>
-          <textarea id="description" class="form-control" rows="3" placeholder="Add any notes..." style="resize: vertical;"></textarea>
-        </div>
-        
-        <div class="form-group">
-          <label for="imageUrl">Image URL (optional)</label>
-          <input type="url" id="imageUrl" class="form-control" placeholder="https://example.com/image.jpg">
-        </div>
-        
-        <button type="submit" class="btn btn-primary" style="width: 100%;" id="submitBtn">Save Receipt</button>
-      </form>
+      </div>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <div id="receiptsContainer">
+      <div class="loading">
+        <div class="spinner"></div>
+      </div>
     </div>
   </div>
+</div>
 
-  <script src="/js/dashboard.js"></script>
+<div id="receiptModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="modalTitle">Add Receipt</h2>
+      <button class="close-btn" id="closeModal">&times;</button>
+    </div>
+
+    <form id="receiptForm">
+      <input type="hidden" id="receiptId">
+
+      <div class="form-group">
+        <label for="title">Title *</label>
+        <input type="text" id="title" class="form-control" placeholder="e.g., Lunch at Restaurant" required>
+      </div>
+
+      <div class="form-group">
+        <label for="merchant">Merchant *</label>
+        <input type="text" id="merchant" class="form-control" placeholder="e.g., Starbucks" required>
+      </div>
+
+      <div class="form-group">
+        <label for="amount">Amount *</label>
+        <input type="number" id="amount" class="form-control" placeholder="0.00" step="0.01" min="0" required>
+      </div>
+
+      <div class="form-group">
+        <label for="currency">Currency</label>
+        <select id="currency" class="form-control">
+          <option value="USD">USD - US Dollar</option>
+          <option value="EUR">EUR - Euro</option>
+          <option value="GBP">GBP - British Pound</option>
+          <option value="KZT" selected>KZT - Kazakhstani Tenge</option>
+          <option value="RUB">RUB - Russian Ruble</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="category">Category *</label>
+        <select id="category" class="form-control" required>
+          <option value="">Select a category</option>
+          <option value="Food & Dining">🍔 Food & Dining</option>
+          <option value="Shopping">🛍️ Shopping</option>
+          <option value="Transportation">🚗 Transportation</option>
+          <option value="Entertainment">🎬 Entertainment</option>
+          <option value="Health">🏥 Health</option>
+          <option value="Bills & Utilities">💡 Bills & Utilities</option>
+          <option value="Travel">✈️ Travel</option>
+          <option value="Education">📚 Education</option>
+          <option value="Other">📦 Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="date">Date *</label>
+        <input type="date" id="date" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label for="paymentMethod">Payment Method</label>
+        <select id="paymentMethod" class="form-control">
+          <option value="Cash">💵 Cash</option>
+          <option value="Credit Card">💳 Credit Card</option>
+          <option value="Debit Card">💳 Debit Card</option>
+          <option value="Digital Wallet">📱 Digital Wallet</option>
+          <option value="Bank Transfer">🏦 Bank Transfer</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" class="form-control" rows="3" placeholder="Add any notes..." style="resize: vertical;"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="imageUrl">Image URL (optional)</label>
+        <input type="url" id="imageUrl" class="form-control" placeholder="https://example.com/image.jpg">
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%;" id="submitBtn">Save Receipt</button>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/js/dashboard.js"></script>
 </body>
 </html>

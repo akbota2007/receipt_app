@@ -1,38 +1,126 @@
+/**
+ * Global Constants & Variables
+ */
 const API_URL = window.location.origin + '/api';
 let receipts = [];
 let editingReceiptId = null;
 
-// Check if user is logged in
+// Global chart instances for Chart.js to allow updates/destruction
+let categoryChart = null;
+let merchantChart = null;
+
+/**
+ * Authentication & Navigation Logic
+ */
+// Check for JWT token in local storage
 const token = localStorage.getItem('token');
 if (!token) {
-  window.location.href = '/login';
+  window.location.href = '/login'; // Redirect to login if not authenticated
 }
 
 const user = JSON.parse(localStorage.getItem('user'));
 
-// Set user info
+// Set user-specific information on the UI
 document.getElementById('userName').textContent = user.username;
 document.getElementById('userAvatar').src = user.avatar;
 
-// Logout
+// Handle user logout
 document.getElementById('logoutBtn').addEventListener('click', () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   window.location.href = '/';
 });
 
-// Show alert
+/**
+ * Data Visualization Logic (Charts)
+ */
+function updateCharts() {
+  const categoryCtx = document.getElementById('categoryChart')?.getContext('2d');
+  const merchantCtx = document.getElementById('merchantChart')?.getContext('2d');
+
+  if (!categoryCtx || !merchantCtx) return;
+
+  // 1. Prepare Data for Category Distribution (Doughnut Chart)
+  const categoryTotals = receipts.reduce((acc, r) => {
+    acc[r.category] = (acc[r.category] || 0) + r.amount;
+    return acc;
+  }, {});
+
+  // Destroy previous instance to prevent overlapping
+  if (categoryChart) categoryChart.destroy();
+  categoryChart = new Chart(categoryCtx, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(categoryTotals),
+      datasets: [{
+        data: Object.values(categoryTotals),
+        backgroundColor: [
+          '#667eea', '#764ba2', '#10b981', '#f59e0b',
+          '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'
+        ],
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right' }
+      }
+    }
+  });
+
+  // 2. Prepare Data for Top 5 Merchants (Bar Chart)
+  const merchantTotals = receipts.reduce((acc, r) => {
+    acc[r.merchant] = (acc[r.merchant] || 0) + r.amount;
+    return acc;
+  }, {});
+
+  // Sort merchants by amount and take top 5
+  const sortedMerchants = Object.entries(merchantTotals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+  if (merchantChart) merchantChart.destroy();
+  merchantChart = new Chart(merchantCtx, {
+    type: 'bar',
+    data: {
+      labels: sortedMerchants.map(m => m[0]),
+      datasets: [{
+        label: 'Spent (KZT)',
+        data: sortedMerchants.map(m => m[1]),
+        backgroundColor: '#667eea',
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true }
+      },
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+}
+
+/**
+ * UI Helper Functions
+ */
+// Display temporary alerts (Success/Error)
 function showAlert(message, type = 'success') {
   const alert = document.getElementById('alert');
   alert.textContent = message;
   alert.className = `alert alert-${type} show`;
-  
+
   setTimeout(() => {
     alert.classList.remove('show');
   }, 5000);
 }
 
-// Format currency
+// Format numbers into currency strings
 function formatCurrency(amount, currency = 'KZT') {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -41,7 +129,7 @@ function formatCurrency(amount, currency = 'KZT') {
   }).format(amount);
 }
 
-// Format date
+// Format ISO date strings to readable format
 function formatDate(dateString) {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
@@ -51,38 +139,38 @@ function formatDate(dateString) {
   });
 }
 
-// Get category class
+// Map category names to CSS classes for styling badges
 function getCategoryClass(category) {
   return 'category-' + category.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
 }
 
-// Fetch receipts
+/**
+ * API Communication (Backend Integration)
+ */
+// Fetch receipts from the server based on current filters
 async function fetchReceipts() {
   try {
     const { category, startDate, endDate, search } = getFilters();
-    
-    // Build URL with proper query parameters
+
     const params = new URLSearchParams();
     if (category) params.append('category', category);
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     if (search) params.append('search', search);
-    
+
     const url = `${API_URL}/receipts?${params.toString()}`;
-    console.log('Fetching receipts with URL:', url);
-    
+
     const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
-    
+
     const data = await response.json();
-    
+
     if (data.success) {
       receipts = data.data;
       updateStats(data);
       renderReceipts();
+      updateCharts(); // Refresh visual data
     } else {
       showAlert(data.message || 'Failed to load receipts', 'danger');
     }
@@ -92,7 +180,7 @@ async function fetchReceipts() {
   }
 }
 
-// Get filters
+// Gather current values from UI filter inputs
 function getFilters() {
   return {
     category: document.getElementById('categoryFilter').value,
@@ -102,26 +190,25 @@ function getFilters() {
   };
 }
 
-// Update statistics
+// Calculate and update the top dashboard stats (Totals, This Month)
 function updateStats(data) {
   document.getElementById('totalReceipts').textContent = data.count;
   document.getElementById('totalAmount').textContent = formatCurrency(data.totalAmount || 0);
-  
-  // Calculate this month's total
+
   const now = new Date();
   const thisMonthReceipts = receipts.filter(r => {
     const receiptDate = new Date(r.date);
-    return receiptDate.getMonth() === now.getMonth() && 
-           receiptDate.getFullYear() === now.getFullYear();
+    return receiptDate.getMonth() === now.getMonth() &&
+        receiptDate.getFullYear() === now.getFullYear();
   });
   const thisMonthTotal = thisMonthReceipts.reduce((sum, r) => sum + r.amount, 0);
   document.getElementById('thisMonth').textContent = formatCurrency(thisMonthTotal);
 }
 
-// Render receipts
+// Dynamically generate and inject receipt cards into the HTML container
 function renderReceipts() {
   const container = document.getElementById('receiptsContainer');
-  
+
   if (receipts.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
@@ -133,15 +220,15 @@ function renderReceipts() {
     `;
     return;
   }
-  
+
   container.innerHTML = `
     <div class="receipts-grid">
       ${receipts.map(receipt => `
         <div class="receipt-card">
-          ${receipt.imageUrl ? 
-            `<img src="${receipt.imageUrl}" alt="${receipt.title}" class="receipt-image" onerror="this.src='https://via.placeholder.com/400x200/667eea/ffffff?text=Receipt'">` :
-            `<div class="receipt-image" style="display: flex; align-items: center; justify-content: center; font-size: 3rem;">📄</div>`
-          }
+          ${receipt.imageUrl ?
+      `<img src="${receipt.imageUrl}" alt="${receipt.title}" class="receipt-image" onerror="this.src='https://via.placeholder.com/400x200/667eea/ffffff?text=Receipt'">` :
+      `<div class="receipt-image" style="display: flex; align-items: center; justify-content: center; font-size: 3rem;">📄</div>`
+  }
           <div class="receipt-content">
             <div class="receipt-header">
               <div>
@@ -182,19 +269,20 @@ function renderReceipts() {
   `;
 }
 
-// Open modal
+/**
+ * Modal & Form Handling
+ */
+// Open the Add/Edit Modal
 function openModal() {
   document.getElementById('receiptModal').classList.add('show');
   document.getElementById('modalTitle').textContent = 'Add Receipt';
   document.getElementById('receiptForm').reset();
   document.getElementById('receiptId').value = '';
   editingReceiptId = null;
-  
-  // Set today's date
   document.getElementById('date').valueAsDate = new Date();
 }
 
-// Close modal
+// Close modal triggers
 document.getElementById('closeModal').addEventListener('click', () => {
   document.getElementById('receiptModal').classList.remove('show');
 });
@@ -205,13 +293,12 @@ document.getElementById('receiptModal').addEventListener('click', (e) => {
   }
 });
 
-// Add receipt button
 document.getElementById('addReceiptBtn').addEventListener('click', openModal);
 
-// Submit receipt form
+// Handle form submission for both Create and Update
 document.getElementById('receiptForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  
+
   const formData = {
     title: document.getElementById('title').value,
     merchant: document.getElementById('merchant').value,
@@ -223,14 +310,11 @@ document.getElementById('receiptForm').addEventListener('submit', async (e) => {
     description: document.getElementById('description').value,
     imageUrl: document.getElementById('imageUrl').value
   };
-  
+
   try {
-    const url = editingReceiptId ? 
-      `${API_URL}/receipts/${editingReceiptId}` : 
-      `${API_URL}/receipts`;
-    
+    const url = editingReceiptId ? `${API_URL}/receipts/${editingReceiptId}` : `${API_URL}/receipts`;
     const method = editingReceiptId ? 'PUT' : 'POST';
-    
+
     const response = await fetch(url, {
       method,
       headers: {
@@ -239,9 +323,9 @@ document.getElementById('receiptForm').addEventListener('submit', async (e) => {
       },
       body: JSON.stringify(formData)
     });
-    
+
     const data = await response.json();
-    
+
     if (data.success) {
       showAlert(editingReceiptId ? 'Receipt updated!' : 'Receipt added!', 'success');
       document.getElementById('receiptModal').classList.remove('show');
@@ -250,26 +334,23 @@ document.getElementById('receiptForm').addEventListener('submit', async (e) => {
       showAlert(data.message || 'Failed to save receipt', 'danger');
     }
   } catch (error) {
-    console.error('Error:', error);
     showAlert('An error occurred', 'danger');
   }
 });
 
-// Edit receipt
+/**
+ * Interaction Actions (CRUD & Likes)
+ */
+// Load specific receipt data into modal for editing
 async function editReceipt(id) {
   try {
     const response = await fetch(`${API_URL}/receipts/${id}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
-    
     const data = await response.json();
-    
     if (data.success) {
       const receipt = data.data;
       editingReceiptId = id;
-      
       document.getElementById('modalTitle').textContent = 'Edit Receipt';
       document.getElementById('receiptId').value = id;
       document.getElementById('title').value = receipt.title;
@@ -281,85 +362,58 @@ async function editReceipt(id) {
       document.getElementById('paymentMethod').value = receipt.paymentMethod;
       document.getElementById('description').value = receipt.description || '';
       document.getElementById('imageUrl').value = receipt.imageUrl || '';
-      
       document.getElementById('receiptModal').classList.add('show');
     }
   } catch (error) {
-    console.error('Error:', error);
     showAlert('Failed to load receipt', 'danger');
   }
 }
 
-// Delete receipt
+// Delete a receipt after confirmation
 async function deleteReceipt(id) {
   if (!confirm('Are you sure you want to delete this receipt?')) return;
-  
   try {
     const response = await fetch(`${API_URL}/receipts/${id}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
-    
     const data = await response.json();
-    
     if (data.success) {
       showAlert('Receipt deleted!', 'success');
       fetchReceipts();
-    } else {
-      showAlert(data.message || 'Failed to delete receipt', 'danger');
     }
   } catch (error) {
-    console.error('Error:', error);
     showAlert('An error occurred', 'danger');
   }
 }
 
-// Toggle like
+// Toggle "Like" status of a receipt
 async function toggleLike(id) {
   try {
     const response = await fetch(`${API_URL}/receipts/${id}/like`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
-    
     const data = await response.json();
-    
-    if (data.success) {
-      fetchReceipts();
-    }
+    if (data.success) fetchReceipts();
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error toggling like:', error);
   }
 }
 
-// Filters
-document.getElementById('categoryFilter').addEventListener('change', () => {
-  console.log('Category changed:', document.getElementById('categoryFilter').value);
-  fetchReceipts();
-});
+/**
+ * Event Listeners for Filters
+ */
+document.getElementById('categoryFilter').addEventListener('change', fetchReceipts);
+document.getElementById('startDate').addEventListener('change', fetchReceipts);
+document.getElementById('endDate').addEventListener('change', fetchReceipts);
 
-document.getElementById('startDate').addEventListener('change', () => {
-  console.log('Start date changed:', document.getElementById('startDate').value);
-  fetchReceipts();
-});
-
-document.getElementById('endDate').addEventListener('change', () => {
-  console.log('End date changed:', document.getElementById('endDate').value);
-  fetchReceipts();
-});
-
+// Debounced search input (waits 500ms before triggering API call)
 let searchTimeout;
 document.getElementById('searchInput').addEventListener('input', () => {
   clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    console.log('Search changed:', document.getElementById('searchInput').value);
-    fetchReceipts();
-  }, 500);
+  searchTimeout = setTimeout(fetchReceipts, 500);
 });
 
-// Initial load
+// Run initial data fetch on page load
 fetchReceipts();
