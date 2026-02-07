@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Profile Settings - Receipt App</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="dashboard">
+<nav class="navbar">
+  <div class="container">
+    <div class="navbar-content">
+      <a href="/dashboard" class="logo">📝 Receipt App</a>
+      <div class="nav-menu">
+        <a href="/dashboard" class="btn btn-secondary btn-small">Back to Dashboard</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container" style="max-width: 600px; margin-top: 3rem;">
+  <div class="stat-card">
+    <h2 style="margin-bottom: 1.5rem;">User Profile Settings</h2>
+    <form id="profileForm" class="styled-form">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="profileUsername" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label>Monthly Budget (KZT)</label>
+        <input type="number" id="profileBudget" class="form-control" placeholder="e.g. 200000" required>
+        <small style="color: var(--text-muted)">This limit will be used for the progress bar on your dashboard.</small>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Save Changes</button>
+    </form>
+    <div id="profileAlert" class="alert" style="margin-top: 1rem;"></div>
+  </div>
+</div>
+
+<script src="/js/profile.js"></script>
+</body>
+</html>

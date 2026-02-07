@@ -33,12 +33,12 @@ app.use(cors());
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  windowMs: 10 * 60 * 1000, // 10 минут
+  max: 100 // лимит: 100 запросов с одного IP
 });
 app.use('/api/', limiter);
 
-// Serve static files
+// Serve static files (CSS, JS, Images)
 app.use(express.static(path.join(__dirname, 'public')));
 
 /**
@@ -47,12 +47,14 @@ app.use(express.static(path.join(__dirname, 'public')));
  */
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
-// Mount routers
+// Mount routers (API)
 app.use('/api/auth', require('./backend/routes/auth'));
 app.use('/api/users', require('./backend/routes/users'));
 app.use('/api/receipts', require('./backend/routes/receipts'));
 
-// Serve HTML pages
+/**
+ * --- SERVE HTML PAGES ---
+ */
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
@@ -69,12 +71,20 @@ app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
 });
 
+// НОВОЕ: Роут для страницы профиля
+app.get('/profile', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'profile.html'));
+});
+
 // Error handler
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
+
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
   console.log(`📸 Uploads directory is ready at: ${uploadDir}`);
+  console.log(`👤 Profile page available at: http://localhost:${PORT}/profile`);
 });

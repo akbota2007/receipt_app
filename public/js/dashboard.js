@@ -30,7 +30,7 @@ const user = JSON.parse(localStorage.getItem('user'));
 
 // Set user info
 document.getElementById('userName').textContent = user.username;
-document.getElementById('userAvatar').src = user.avatar;
+document.getElementById('userAvatar').src = user.avatar || `https://ui-avatars.com/api/?name=${user.username}&background=667eea&color=fff`;
 
 // Logout handler
 document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -209,13 +209,20 @@ function getFilters() {
   };
 }
 
+/**
+ * Исправленная функция updateStats с динамической логикой бюджета
+ */
 function updateStats(data) {
+  // Получаем бюджет из localStorage или используем дефолтный
+  const monthlyBudgetKZT = parseInt(localStorage.getItem('monthlyBudget')) || 200000;
+
   document.getElementById('totalReceipts').textContent = data.count;
 
-  // Конвертируем общий тотал из KZT в выбранную валюту отображения
+  // 1. Общий баланс в выбранной валюте
   const totalInBase = (data.totalAmount || 0) / EXCHANGE_RATES[currentBaseCurrency];
   document.getElementById('totalAmount').textContent = formatCurrency(totalInBase, currentBaseCurrency);
 
+  // 2. Расчет за текущий месяц (в KZT для логики бюджета)
   const now = new Date();
   const thisMonthTotalKZT = receipts
       .filter(r => {
@@ -227,8 +234,29 @@ function updateStats(data) {
         return sum + (r.amount * rate);
       }, 0);
 
+  // Показываем "This Month" в выбранной валюте
   const thisMonthInBase = thisMonthTotalKZT / EXCHANGE_RATES[currentBaseCurrency];
   document.getElementById('thisMonth').textContent = formatCurrency(thisMonthInBase, currentBaseCurrency);
+
+  // --- ЛОГИКА БЮДЖЕТА ---
+  const percent = Math.min((thisMonthTotalKZT / monthlyBudgetKZT) * 100, 100);
+  const progressBar = document.getElementById('budgetProgressBar');
+  const budgetPercent = document.getElementById('budgetPercent');
+
+  if (progressBar && budgetPercent) {
+    progressBar.style.width = `${percent}%`;
+    budgetPercent.textContent = `${Math.round((thisMonthTotalKZT / monthlyBudgetKZT) * 100)}%`;
+
+    // Смена цвета
+    if (percent > 90) progressBar.style.backgroundColor = '#ef4444';
+    else if (percent > 70) progressBar.style.backgroundColor = '#f59e0b';
+    else progressBar.style.backgroundColor = '#10b981';
+
+    // Текстовые подписи бюджета
+    const limitInBase = monthlyBudgetKZT / EXCHANGE_RATES[currentBaseCurrency];
+    document.getElementById('budgetSpentText').textContent = `Spent: ${formatCurrency(thisMonthInBase, currentBaseCurrency)}`;
+    document.getElementById('budgetLimitText').textContent = `Limit: ${formatCurrency(limitInBase, currentBaseCurrency)} ⚙️`;
+  }
 }
 
 function renderReceipts() {
@@ -248,10 +276,7 @@ function renderReceipts() {
         `}
         <div class="receipt-content">
           <div class="receipt-header">
-            <div>
-                <div class="receipt-title">${r.title}</div>
-                <div class="receipt-merchant">${r.merchant}</div>
-            </div>
+            <div><div class="receipt-title">${r.title}</div><div class="receipt-merchant">${r.merchant}</div></div>
             <div class="receipt-amount">${formatCurrency(r.amount, r.currency)}</div>
           </div>
           <div class="receipt-details">
@@ -289,11 +314,10 @@ document.getElementById('closeModal').addEventListener('click', () => {
 document.getElementById('addReceiptBtn').addEventListener('click', openModal);
 
 /**
- * Form Submission (Multipart/FormData)
+ * Form Submission
  */
 document.getElementById('receiptForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-
   const formData = new FormData();
   formData.append('title', document.getElementById('title').value);
   formData.append('merchant', document.getElementById('merchant').value);
@@ -305,11 +329,8 @@ document.getElementById('receiptForm').addEventListener('submit', async (e) => {
   formData.append('description', document.getElementById('description').value);
 
   const imageFile = document.getElementById('imageFile').files[0];
-  if (imageFile) {
-    formData.append('image', imageFile);
-  } else {
-    formData.append('imageUrl', document.getElementById('imageUrl').value);
-  }
+  if (imageFile) formData.append('image', imageFile);
+  else formData.append('imageUrl', document.getElementById('imageUrl').value);
 
   const url = editingReceiptId ? `${API_URL}/receipts/${editingReceiptId}` : `${API_URL}/receipts`;
   const method = editingReceiptId ? 'PUT' : 'POST';
@@ -320,18 +341,12 @@ document.getElementById('receiptForm').addEventListener('submit', async (e) => {
       headers: { 'Authorization': `Bearer ${token}` },
       body: formData
     });
-
-    const result = await response.json();
-    if (result.success) {
+    if ((await response.json()).success) {
       document.getElementById('receiptModal').classList.remove('show');
       fetchReceipts();
       showAlert(editingReceiptId ? 'Receipt updated!' : 'Receipt added!');
-    } else {
-      showAlert(result.message || 'Error saving receipt', 'danger');
     }
-  } catch (err) {
-    showAlert('Server error occurred', 'danger');
-  }
+  } catch (err) { showAlert('Server error occurred', 'danger'); }
 });
 
 /**
@@ -339,15 +354,11 @@ document.getElementById('receiptForm').addEventListener('submit', async (e) => {
  */
 async function editReceipt(id) {
   try {
-    const res = await fetch(`${API_URL}/receipts/${id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    const res = await fetch(`${API_URL}/receipts/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
     const data = await res.json();
-
     if (data.success) {
       const r = data.data;
       editingReceiptId = id;
-
       document.getElementById('modalTitle').textContent = 'Edit Receipt';
       document.getElementById('title').value = r.title;
       document.getElementById('merchant').value = r.merchant;
@@ -358,44 +369,33 @@ async function editReceipt(id) {
       document.getElementById('paymentMethod').value = r.paymentMethod;
       document.getElementById('description').value = r.description || '';
       document.getElementById('imageUrl').value = r.imageUrl || '';
-
       document.getElementById('receiptModal').classList.add('show');
     }
-  } catch (err) {
-    showAlert('Failed to load receipt', 'danger');
-  }
+  } catch (err) { showAlert('Failed to load receipt', 'danger'); }
 }
 
 async function deleteReceipt(id) {
   if (confirm('Delete this receipt?')) {
-    await fetch(`${API_URL}/receipts/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    await fetch(`${API_URL}/receipts/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
     fetchReceipts();
   }
 }
 
 async function toggleLike(id) {
-  await fetch(`${API_URL}/receipts/${id}/like`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
+  await fetch(`${API_URL}/receipts/${id}/like`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
   fetchReceipts();
 }
 
 /**
- * Filters & Export & Base Currency Switcher
+ * Events
  */
 document.getElementById('exportCsvBtn').addEventListener('click', exportToCSV);
 document.getElementById('categoryFilter').addEventListener('change', fetchReceipts);
 document.getElementById('startDate').addEventListener('change', fetchReceipts);
 document.getElementById('endDate').addEventListener('change', fetchReceipts);
 
-// Слушатель для переключателя базовой валюты отображения
 document.getElementById('baseCurrencySelector').addEventListener('change', (e) => {
   currentBaseCurrency = e.target.value;
-  // Пересчитываем тотал на основе текущих загруженных данных
   const totalKZT = receipts.reduce((sum, r) => sum + (r.amount * (EXCHANGE_RATES[r.currency] || 1)), 0);
   updateStats({ count: receipts.length, totalAmount: totalKZT });
   updateCharts();
@@ -410,9 +410,7 @@ document.getElementById('searchInput').addEventListener('input', () => {
 function exportToCSV() {
   if (receipts.length === 0) return showAlert('No data to export', 'danger');
   const headers = ['Title', 'Merchant', 'Amount', 'Currency', 'Category', 'Date'];
-  const rows = receipts.map(r => [
-    `"${r.title}"`, `"${r.merchant}"`, r.amount, r.currency, `"${r.category}"`, r.date
-  ]);
+  const rows = receipts.map(r => [`"${r.title}"`, `"${r.merchant}"`, r.amount, r.currency, `"${r.category}"`, r.date]);
   const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
@@ -422,5 +420,4 @@ function exportToCSV() {
   a.click();
 }
 
-// Initial Load
 fetchReceipts();
