@@ -1,6 +1,5 @@
 const API_URL = window.location.origin + '/api';
 
-// Show alert
 function showAlert(message, type = 'success') {
   const alert = document.getElementById('alert');
   alert.textContent = message;
@@ -11,13 +10,11 @@ function showAlert(message, type = 'success') {
   }, 5000);
 }
 
-// Validate email
 function validateEmail(email) {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(email);
 }
 
-// Register form
 const registerForm = document.getElementById('registerForm');
 if (registerForm) {
   registerForm.addEventListener('submit', async (e) => {
@@ -27,27 +24,23 @@ if (registerForm) {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     
-    // Clear previous errors
     document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
     document.querySelectorAll('.form-control').forEach(el => el.classList.remove('error'));
     
     let hasError = false;
     
-    // Validate username
     if (username.length < 3) {
       document.getElementById('username').classList.add('error');
       document.getElementById('usernameError').classList.add('show');
       hasError = true;
     }
     
-    // Validate email
     if (!validateEmail(email)) {
       document.getElementById('email').classList.add('error');
       document.getElementById('emailError').classList.add('show');
       hasError = true;
     }
     
-    // Validate password
     if (password.length < 6) {
       document.getElementById('password').classList.add('error');
       document.getElementById('passwordError').classList.add('show');
@@ -84,7 +77,6 @@ if (registerForm) {
   });
 }
 
-// Login form
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
   loginForm.addEventListener('submit', async (e) => {
@@ -93,20 +85,17 @@ if (loginForm) {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     
-    // Clear previous errors
     document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
     document.querySelectorAll('.form-control').forEach(el => el.classList.remove('error'));
     
     let hasError = false;
     
-    // Validate email
     if (!validateEmail(email)) {
       document.getElementById('email').classList.add('error');
       document.getElementById('emailError').classList.add('show');
       hasError = true;
     }
     
-    // Validate password
     if (!password) {
       document.getElementById('password').classList.add('error');
       document.getElementById('passwordError').classList.add('show');

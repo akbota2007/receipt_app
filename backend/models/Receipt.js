@@ -66,7 +66,6 @@ const receiptSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Create index for better query performance
 receiptSchema.index({ user: 1, date: -1 });
 receiptSchema.index({ category: 1 });
 

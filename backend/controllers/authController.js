@@ -2,16 +2,11 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
-// Generate JWT Token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE
   });
 };
-
-// @desc    Register user
-// @route   POST /api/auth/register
-// @access  Public
 exports.register = async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
@@ -48,9 +43,6 @@ exports.register = async (req, res, next) => {
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
-// @access  Public
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -84,8 +76,8 @@ exports.login = async (req, res, next) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
-        budget: user.budget, // Добавлено
-        defaultCurrency: user.defaultCurrency // Добавлено
+        budget: user.budget,
+        defaultCurrency: user.defaultCurrency 
       }
     });
   } catch (error) {
@@ -93,14 +85,10 @@ exports.login = async (req, res, next) => {
   }
 };
 
-// @desc    Update user profile
-// @route   PUT /api/auth/profile
-// @access  Private
 exports.updateProfile = async (req, res, next) => {
   try {
     const { username, budget, defaultCurrency } = req.body;
 
-    // Находим пользователя по ID (из токена) и обновляем поля
     const user = await User.findByIdAndUpdate(
         req.user.id,
         { username, budget, defaultCurrency },
@@ -124,7 +112,6 @@ exports.updateProfile = async (req, res, next) => {
   }
 };
 
-// Send welcome email
 const sendWelcomeEmail = async (email, username) => {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
     return;

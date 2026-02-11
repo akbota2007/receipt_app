@@ -1,28 +1,28 @@
-# 📝 Receipt App - Modern Expense Management System
+# Receipt App - Modern Expense Management System
 
 A beautiful, full-stack web application for managing receipts and tracking expenses. Built with Node.js, Express, MongoDB, and a stunning responsive frontend.
 
-## 🌟 Features
+## Features
 
 ### Core Functionality
-- ✅ **User Authentication**: Secure registration and login with JWT
-- ✅ **Receipt Management**: Create, read, update, and delete receipts
-- ✅ **Categories**: Organize receipts by category (Food, Shopping, Travel, etc.)
-- ✅ **Statistics Dashboard**: View total expenses, receipt count, and monthly summaries
-- ✅ **Advanced Filtering**: Filter by category, date range, and search
-- ✅ **Like System**: Favorite your important receipts
-- ✅ **Image Support**: Add images to your receipts
+- **User Authentication**: Secure registration and login with JWT
+- **Receipt Management**: Create, read, update, and delete receipts
+- **Categories**: Organize receipts by category (Food, Shopping, Travel, etc.)
+- **Statistics Dashboard**: View total expenses, receipt count, and monthly summaries
+- **Advanced Filtering**: Filter by category, date range, and search
+- **Like System**: Favorite your important receipts
+- **Image Support**: Add images to your receipts
 
 ### Advanced Features
-- ✅ **Role-Based Access Control (RBAC)**: Admin, Premium, and User roles
-- ✅ **Email Notifications**: Welcome emails on registration (optional)
-- ✅ **Responsive Design**: Works perfectly on desktop, tablet, and mobile
-- ✅ **Beautiful UI**: Modern gradient design with smooth animations
-- ✅ **Data Validation**: Comprehensive validation using Joi
-- ✅ **Error Handling**: Global error handling middleware
-- ✅ **Rate Limiting**: API protection with rate limiting
+- **Role-Based Access Control (RBAC)**: Admin, Premium, and User roles
+- **Email Notifications**: Welcome emails on registration (optional)
+- **Responsive Design**: Works perfectly on desktop, tablet, and mobile
+- **Beautiful UI**: Modern gradient design with smooth animations
+- **Data Validation**: Comprehensive validation using Joi
+- **Error Handling**: Global error handling middleware
+- **Rate Limiting**: API protection with rate limiting
 
-## 🎨 Screenshots
+## Screenshots
 
 ### Landing Page
 ![Landing Page](screenshots/screenshot1.png)
@@ -43,7 +43,7 @@ Beautiful gradient landing page with call-to-action buttons.
 - Category badges
 - Like/favorite system
 
-## 🚀 Technologies Used
+## Technologies Used
 
 ### Backend
 - **Node.js** - JavaScript runtime
@@ -62,7 +62,7 @@ Beautiful gradient landing page with call-to-action buttons.
 - **Fetch API** - HTTP requests
 - **Google Fonts (Inter)** - Typography
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have:
 - Node.js (v14 or higher)
@@ -111,7 +111,7 @@ npm start
 
 The application will start on `http://localhost:3001`
 
-## 📚 API Documentation
+## API Documentation
 
 ### Authentication Endpoints
 
@@ -268,7 +268,7 @@ Content-Type: application/json
 }
 ```
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 receipt-app/
@@ -308,7 +308,7 @@ receipt-app/
 └── README.md                     # Documentation
 ```
 
-## 🎯 Database Schema
+## Database Schema
 
 ### User Collection
 ```javascript
@@ -345,7 +345,7 @@ receipt-app/
 }
 ```
 
-## 🌐 Deployment
+## Deployment
 
 ### Deploy to Render
 
@@ -367,16 +367,16 @@ receipt-app/
 2. Add secrets (environment variables)
 3. Run the project
 
-## 🔐 Security Features
+## Security Features
 
-- ✅ Password hashing with bcrypt
-- ✅ JWT token authentication
-- ✅ Protected routes with middleware
-- ✅ Input validation with Joi
-- ✅ Rate limiting to prevent abuse
-- ✅ CORS enabled
-- ✅ Environment variables for sensitive data
-- ✅ Role-based access control
+- Password hashing with bcrypt
+- JWT token authentication
+- Protected routes with middleware
+- Input validation with Joi
+- Rate limiting to prevent abuse
+- CORS enabled
+- Environment variables for sensitive data
+- Role-based access control
 
 ## 👥 Team Members & Responsibilities
 
@@ -384,7 +384,7 @@ receipt-app/
 - **[Altynay]** - Frontend design, UI/UX, responsive layout
 - **[Nuray]** - API development, testing, documentation
 
-## 📝 Testing the Application
+## Testing the Application
 
 ### Manual Testing Steps
 
@@ -416,14 +416,10 @@ receipt-app/
    - Verify statistics update correctly
    - Check monthly calculations
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
-**Cannot connect to MongoDB:**
-- Check your MONGO_URI in .env file
-- Ensure your IP is whitelisted in MongoDB Atlas
-- Verify network connection
 
 **Port already in use:**
 - Change PORT in .env file
@@ -432,17 +428,6 @@ receipt-app/
 **JWT errors:**
 - Check JWT_SECRET is set in .env
 - Clear localStorage and login again
-
-## 📄 License
-
-This project is licensed under the ISC License.
-
-## 🙏 Acknowledgments
-
-- MongoDB Atlas for database hosting
-- Express.js community
-- All open-source contributors
-
 
 ---
 

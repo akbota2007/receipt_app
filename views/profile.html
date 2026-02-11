@@ -8,7 +8,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <script>
-    // Мгновенное применение темы
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
   </script>
@@ -16,12 +15,10 @@
   <style>
     .settings-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
 
-    /* Глобальный фон для темной темы */
     [data-theme="dark"] body.dashboard {
       background-color: #0f172a;
     }
 
-    /* --- ИСПРАВЛЕННЫЕ ВКЛАДКИ (TABS) --- */
     .tabs-nav {
       display: flex;
       gap: 12px;
@@ -34,12 +31,12 @@
     }
 
     .tab-btn {
-      flex: 1; /* Кнопки будут растягиваться равномерно */
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 14px 20px; /* Увеличенный размер для удобства */
+      padding: 14px 20px;
       border: none;
       background: transparent;
       color: var(--text-muted);
@@ -48,7 +45,7 @@
       cursor: pointer;
       border-radius: 12px;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      white-space: nowrap; /* Чтобы текст не переносился */
+      white-space: nowrap;
     }
 
     .tab-btn.active {
@@ -67,7 +64,6 @@
       color: #94a3b8;
     }
 
-    /* Контент вкладок */
     .tab-content { display: none; animation: slideUp 0.4s ease-out; }
     .tab-content.active { display: block; }
 
@@ -76,7 +72,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Карточки профиля */
     .profile-card {
       background: var(--bg-card);
       border-radius: 24px;
@@ -86,7 +81,6 @@
       color: var(--text-main);
     }
 
-    /* Поля ввода (Inputs) */
     .form-group label {
       display: block;
       margin-bottom: 10px;
@@ -136,7 +130,6 @@
       box-shadow: 0 15px 25px rgba(102, 126, 234, 0.4);
     }
 
-    /* Danger Zone */
     .danger-zone {
       border: 2px dashed #ef4444;
       background: rgba(239, 68, 68, 0.03);
@@ -146,8 +139,6 @@
       background: rgba(239, 68, 68, 0.08);
       border-color: #f87171;
     }
-
-    /* Адаптивность для мобильных */
     @media (max-width: 600px) {
       .tabs-nav { flex-wrap: wrap; }
       .tab-btn { flex: 1 1 100%; }

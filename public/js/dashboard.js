@@ -1,13 +1,8 @@
-/**
- * Global Constants & Variables
- */
 const API_URL = window.location.origin + '/api';
 let receipts = [];
 let editingReceiptId = null;
-let currentView = 'all'; // all | favorites
+let currentView = 'all';
 
-
-// Статичные курсы валют (соответствуют бэкенду)
 const EXCHANGE_RATES = {
   KZT: 1,
   USD: 450,
@@ -15,38 +10,33 @@ const EXCHANGE_RATES = {
   RUB: 5
 };
 
-// Global chart instances
 let categoryChart = null;
 let merchantChart = null;
-
-/**
- * Authentication & Navigation
- */
 const token = localStorage.getItem('token');
 if (!token) {
   window.location.href = '/login';
 }
 
-// Получаем актуальные данные пользователя
 const user = JSON.parse(localStorage.getItem('user'));
+if (user.role === 'admin') {
+  const navMenu = document.querySelector('.nav-menu');
 
-// Устанавливаем валюту отображения из профиля (MongoDB) или KZT по умолчанию
+  const adminBadge = document.createElement('span');
+  adminBadge.textContent = 'Admin';
+  adminBadge.style.fontWeight = '700';
+  adminBadge.style.color = '#ef4444';
+
+  navMenu.prepend(adminBadge);
+}
 let currentBaseCurrency = user.defaultCurrency || 'KZT';
-
-// Установка информации о пользователе в шапке
 if (document.getElementById('userName')) {
   document.getElementById('userName').textContent = user.username;
 }
-
-// Синхронизируем селектор валюты на странице с данными из базы
 const currencySelector = document.getElementById('baseCurrencySelector');
 if (currencySelector) {
   currencySelector.value = currentBaseCurrency;
 }
 
-/**
- * Dark Mode Logic
- */
 const themeToggle = document.getElementById('themeToggle');
 const savedTheme = localStorage.getItem('theme') || 'light';
 
@@ -66,7 +56,6 @@ if (themeToggle) {
   });
 }
 
-// Logout handler
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
   logoutBtn.addEventListener('click', () => {
@@ -76,9 +65,6 @@ if (logoutBtn) {
   });
 }
 
-/**
- * Data Visualization (Charts)
- */
 function updateCharts() {
   const categoryCtx = document.getElementById('categoryChart')?.getContext('2d');
   const merchantCtx = document.getElementById('merchantChart')?.getContext('2d');
@@ -155,9 +141,6 @@ function updateCharts() {
   });
 }
 
-/**
- * UI Helpers
- */
 function showAlert(message, type = 'success') {
   const alert = document.getElementById('alert');
   if (!alert) return;
@@ -182,9 +165,6 @@ function getCategoryClass(category) {
   return 'category-' + category.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
 }
 
-/**
- * API Communication
- */
 async function fetchReceipts() {
   try {
     const filters = getFilters();
@@ -218,19 +198,12 @@ function getFilters() {
   };
 }
 
-/**
- * Логика статистики и бюджета (Интеграция с MongoDB)
- */
 function updateStats(data) {
-  // Получаем лимит бюджета напрямую из объекта пользователя (из базы)
   const monthlyBudgetKZT = user.budget || 200000;
-
-  // 1. Общие показатели
   const totalInBase = (data.totalAmount || 0) / EXCHANGE_RATES[currentBaseCurrency];
   document.getElementById('totalReceipts').textContent = data.count;
   document.getElementById('totalAmount').textContent = formatCurrency(totalInBase, currentBaseCurrency);
 
-  // 2. Расчет за текущий месяц
   const now = new Date();
   const thisMonthTotalKZT = receipts
       .filter(r => {
@@ -242,10 +215,12 @@ function updateStats(data) {
   const thisMonthInBase = thisMonthTotalKZT / EXCHANGE_RATES[currentBaseCurrency];
   document.getElementById('thisMonth').textContent = formatCurrency(thisMonthInBase, currentBaseCurrency);
 
-  // 3. Прогресс-бар бюджета
   const percent = Math.min((thisMonthTotalKZT / monthlyBudgetKZT) * 100, 100);
   const progressBar = document.getElementById('budgetProgressBar');
   const budgetPercent = document.getElementById('budgetPercent');
+  if (user.role === 'admin') {
+    document.querySelector('h1').textContent = 'System Receipts';
+  }
 
   if (progressBar && budgetPercent) {
     progressBar.style.width = `${percent}%`;
@@ -293,12 +268,17 @@ function renderReceipts() {
           
           <div class="receipt-content">
             <div class="receipt-header">
-              <div>
-                <div class="receipt-title">${r.title}</div>
-                <div class="receipt-merchant">${r.merchant}</div>
+            <div>
+            <div class="receipt-title">${r.title}</div>
+            <div class="receipt-merchant">${r.merchant}</div>
+            ${user.role === 'admin' && r.user ? `
+              <div style="font-size:12px; color:#ef4444;">
+              Owner: ${r.user.username || r.user}
+              </div>
+              ` : ''}
               </div>
               <div class="receipt-amount">${formatCurrency(r.amount, r.currency)}</div>
-            </div>
+              </div>
 
             <div class="receipt-details">
               <span class="category-badge ${getCategoryClass(r.category)}">${r.category}</span>
@@ -357,10 +337,6 @@ function clearDateError() {
 startDateInput.addEventListener('change', validateDateRange);
 endDateInput.addEventListener('change', validateDateRange);
 
-
-/**
- * Modal & Form Logic
- */
 function openModal() {
   editingReceiptId = null;
   const modal = document.getElementById('receiptModal');
@@ -539,9 +515,6 @@ function showBudgetInsight(spent, limit) {
   return '🔴 You are close to your budget limit';
 }
 
-/**
- * Event Listeners
- */
 document.getElementById('baseCurrencySelector')?.addEventListener('change', (e) => {
   currentBaseCurrency = e.target.value;
   const totalKZT = receipts.reduce((sum, r) => sum + (r.amount * (EXCHANGE_RATES[r.currency] || 1)), 0);
@@ -572,5 +545,4 @@ function exportToCSV() {
   a.href = url; a.download = 'receipts.csv'; a.click();
 }
 
-// Запуск приложения
 fetchReceipts();

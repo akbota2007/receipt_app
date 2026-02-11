@@ -1,8 +1,5 @@
 const User = require('../models/User');
 
-// @desc    Get current user profile
-// @route   GET /api/users/profile
-// @access  Private
 exports.getProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
@@ -16,9 +13,6 @@ exports.getProfile = async (req, res, next) => {
   }
 };
 
-// @desc    Update user profile
-// @route   PUT /api/users/profile
-// @access  Private
 exports.updateProfile = async (req, res, next) => {
   try {
     const fieldsToUpdate = {
@@ -45,9 +39,6 @@ exports.updateProfile = async (req, res, next) => {
   }
 };
 
-// @desc    Get all users (Admin only)
-// @route   GET /api/users
-// @access  Private/Admin
 exports.getAllUsers = async (req, res, next) => {
   try {
     const users = await User.find().select('-password');
@@ -62,9 +53,6 @@ exports.getAllUsers = async (req, res, next) => {
   }
 };
 
-// @desc    Delete user (Admin only)
-// @route   DELETE /api/users/:id
-// @access  Private/Admin
 exports.deleteUser = async (req, res, next) => {
   try {
     await User.findByIdAndDelete(req.params.id);
@@ -78,9 +66,6 @@ exports.deleteUser = async (req, res, next) => {
   }
 };
 
-// @desc    Update user role (Admin only)
-// @route   PUT /api/users/:id/role
-// @access  Private/Admin
 exports.updateUserRole = async (req, res, next) => {
   try {
     const user = await User.findByIdAndUpdate(

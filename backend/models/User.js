@@ -25,20 +25,18 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'premium', 'admin'],
+    enum: ['user', 'admin'],
     default: 'user'
   },
-  // --- НОВЫЕ ПОЛЯ ДЛЯ ПРОФИЛЯ ---
   budget: {
     type: Number,
-    default: 200000 // Лимит по умолчанию в тенге
+    default: 200000
   },
   defaultCurrency: {
     type: String,
     enum: ['KZT', 'USD', 'EUR'],
     default: 'KZT'
   },
-  // ------------------------------
   avatar: {
     type: String,
     default: function() {
@@ -55,7 +53,6 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     next();
@@ -64,7 +61,6 @@ userSchema.pre('save', async function(next) {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Match password
 userSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

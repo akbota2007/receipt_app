@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Receipt App</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="dashboard">
+
+<nav class="navbar">
+  <div class="container">
+    <div class="navbar-content">
+      <a href="/dashboard" class="logo">🛠 Admin Panel</a>
+      <div class="nav-menu">
+        <a href="/dashboard" class="btn btn-secondary btn-small">← Back</a>
+        <button class="btn btn-danger btn-small" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <h1 style="margin: 30px 0;">System Overview</h1>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value" id="totalUsers">0</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="totalReceipts">0</div>
+      <div class="stat-label">Total Receipts</div>
+    </div>
+  </div>
+
+  <h2 style="margin-top:40px;">Users</h2>
+  <div id="usersContainer"></div>
+
+  <h2 style="margin-top:40px;">All Receipts</h2>
+  <div id="receiptsContainer"></div>
+</div>
+
+<script src="/js/admin.js"></script>
+</body>
+</html>

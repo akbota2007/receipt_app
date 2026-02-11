@@ -1,23 +1,16 @@
-/**
- * Profile Management logic with MongoDB integration
- */
 const API_URL = window.location.origin + '/api';
 const token = localStorage.getItem('token');
 let user = JSON.parse(localStorage.getItem('user'));
 
-// Если токена нет, отправляем на логин
 if (!token) {
     window.location.href = '/login';
 }
 
-// 1. Инициализация полей данными из объекта пользователя (из базы)
 document.getElementById('profileUsername').value = user.username;
 document.getElementById('profileEmail').value = user.email;
-// Берем бюджет и валюту из объекта user, который пришел с сервера
 document.getElementById('profileBudget').value = user.budget || 200000;
 document.getElementById('profileDefaultCurrency').value = user.defaultCurrency || 'KZT';
 
-// 2. Обработка сохранения формы в MongoDB
 document.getElementById('profileForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -40,29 +33,23 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
         const result = await response.json();
 
         if (result.success) {
-            // Обновляем данные в localStorage, чтобы дашборд сразу их подхватил
             localStorage.setItem('user', JSON.stringify(result.user));
-
-            // Также обновляем старые ключи для совместимости с dashboard.js
             localStorage.setItem('monthlyBudget', result.user.budget);
             localStorage.setItem('defaultCurrency', result.user.defaultCurrency);
 
-            showProfileAlert("✅ Profile updated in MongoDB successfully!", "success");
+            showProfileAlert("Profile updated in MongoDB successfully!", "success");
 
-            // Небольшая задержка для визуального подтверждения
             setTimeout(() => {
                 window.location.href = '/dashboard';
             }, 1200);
         } else {
-            showProfileAlert("❌ Error: " + result.message, "danger");
+            showProfileAlert("Error: " + result.message, "danger");
         }
     } catch (err) {
         console.error('Update error:', err);
-        showProfileAlert("❌ Server connection failed", "danger");
+        showProfileAlert("Server connection failed", "danger");
     }
 });
-
-// 3. Логика экспорта (JSON бэкап)
 document.getElementById('exportDataBtn').addEventListener('click', () => {
     const backup = {
         user: user.username,
@@ -79,9 +66,6 @@ document.getElementById('exportDataBtn').addEventListener('click', () => {
     a.click();
 });
 
-/**
- * UI Alert Helper
- */
 function showProfileAlert(msg, type) {
     const alert = document.getElementById('profileAlert');
     if (!alert) return;
@@ -95,9 +79,6 @@ function showProfileAlert(msg, type) {
     }, 3000);
 }
 
-/**
- * Табы (Tabs logic) - если ты используешь вкладочный интерфейс
- */
 window.openTab = function(evt, tabName) {
     const tabContents = document.getElementsByClassName("tab-content");
     for (let i = 0; i < tabContents.length; i++) {

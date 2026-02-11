@@ -1,6 +1,5 @@
 const Joi = require('joi');
 
-// Validate user registration
 exports.validateRegister = (req, res, next) => {
   const schema = Joi.object({
     username: Joi.string().min(3).max(30).required(),
@@ -18,7 +17,6 @@ exports.validateRegister = (req, res, next) => {
   next();
 };
 
-// Validate user login
 exports.validateLogin = (req, res, next) => {
   const schema = Joi.object({
     email: Joi.string().email().required(),
@@ -35,7 +33,6 @@ exports.validateLogin = (req, res, next) => {
   next();
 };
 
-// Validate receipt creation
 exports.validateReceipt = (req, res, next) => {
   const schema = Joi.object({
     title: Joi.string().max(100).required(),
