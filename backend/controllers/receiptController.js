@@ -5,8 +5,7 @@ const fs = require('fs');
 const EXCHANGE_RATES = {
   KZT: 1,
   USD: 450,
-  EUR: 485,
-  RUB: 5
+  EUR: 485
 };
 
 const deleteFile = (filePath) => {
@@ -164,6 +163,26 @@ exports.deleteReceipt = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.deleteAllReceipts = async (req, res, next) => {
+  try {
+
+    if (req.user.role === 'admin') {
+      await Receipt.deleteMany({});
+    } else {
+      await Receipt.deleteMany({ user: req.user.id });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'All receipts deleted'
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 exports.getStats = async (req, res, next) => {
   try {

@@ -25,19 +25,20 @@ A beautiful, full-stack web application for managing receipts and tracking expen
 ## Screenshots
 
 ### Landing Page
-![Landing Page](screenshots/screenshot1.png)
+![Landing Page - Image 1](screenshots/screenshot1.png)
+![Landing Page - Image 2](screenshots/screenshot2.png)
 
 Beautiful gradient landing page with call-to-action buttons.
 
 ### Dashboard
-![Dashboard - Image 1](screenshots/screenshot2.png)  
-![Dashboard - Image 2](screenshots/screenshot3.png)
+![Dashboard - Image 1](screenshots/screenshot3.png)  
+![Dashboard - Image 2](screenshots/screenshot4.png)
 - Statistics cards showing total receipts, expenses, and monthly summary.
 - Advanced filters for category, date range, and search.
 - Beautiful receipt cards with images and details.
 
 ### Receipt Management
-![Receipt Card](screenshots/screenshot4.png)
+![Receipt Card](screenshots/screenshot5.png)
 - Add/Edit receipts with comprehensive form.
 - Multiple payment methods
 - Category badges

@@ -9,7 +9,8 @@ const {
   updateReceipt,
   deleteReceipt,
   getStats,
-  toggleLike
+  toggleLike,
+  deleteAllReceipts
 } = require('../controllers/receiptController');
 const { protect } = require('../middleware/auth');
 const { validateReceipt } = require('../middleware/validation');
@@ -50,5 +51,6 @@ router.route('/:id')
     .delete(protect, deleteReceipt);
 
 router.post('/:id/like', protect, toggleLike);
+router.delete('/delete-all', protect, deleteAllReceipts);
 
 module.exports = router;

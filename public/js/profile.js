@@ -14,9 +14,14 @@ document.getElementById('profileDefaultCurrency').value = user.defaultCurrency |
 document.getElementById('profileForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    const budgetValue = parseInt(document.getElementById('profileBudget').value);
+    if (isNaN(budgetValue) || budgetValue < 0) {
+        showProfileAlert("Budget cannot be negative", "danger");
+        return;
+    }
     const updatedData = {
         username: document.getElementById('profileUsername').value,
-        budget: parseInt(document.getElementById('profileBudget').value),
+        budget: budgetValue,
         defaultCurrency: document.getElementById('profileDefaultCurrency').value
     };
 
@@ -50,6 +55,7 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
         showProfileAlert("Server connection failed", "danger");
     }
 });
+
 document.getElementById('exportDataBtn').addEventListener('click', () => {
     const backup = {
         user: user.username,

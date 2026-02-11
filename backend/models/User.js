@@ -30,7 +30,8 @@ const userSchema = new mongoose.Schema({
   },
   budget: {
     type: Number,
-    default: 200000
+    default: 200000,
+    min: [0, 'Budget cannot be negative']
   },
   defaultCurrency: {
     type: String,

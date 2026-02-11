@@ -53,6 +53,9 @@ app.get('/dashboard', (req, res) => {
 app.get('/profile', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'profile.html'));
 });
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'admin.html'));
+});
 
 app.use(errorHandler);
 

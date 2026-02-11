@@ -20,7 +20,7 @@ const receiptSchema = new mongoose.Schema({
   currency: {
     type: String,
     default: 'USD',
-    enum: ['USD', 'EUR', 'GBP', 'KZT', 'RUB']
+    enum: ['USD', 'EUR', 'GBP', 'KZT']
   },
   category: {
     type: String,

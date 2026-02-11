@@ -6,8 +6,7 @@ let currentView = 'all';
 const EXCHANGE_RATES = {
   KZT: 1,
   USD: 450,
-  EUR: 485,
-  RUB: 5
+  EUR: 485
 };
 
 let categoryChart = null;
@@ -21,12 +20,13 @@ const user = JSON.parse(localStorage.getItem('user'));
 if (user.role === 'admin') {
   const navMenu = document.querySelector('.nav-menu');
 
-  const adminBadge = document.createElement('span');
-  adminBadge.textContent = 'Admin';
-  adminBadge.style.fontWeight = '700';
-  adminBadge.style.color = '#ef4444';
+  const adminBtn = document.createElement('a');
+  adminBtn.href = '/admin';
+  adminBtn.textContent = '🛠 Admin Panel';
+  adminBtn.className = 'btn btn-secondary btn-small';
+  adminBtn.style.marginRight = '10px';
 
-  navMenu.prepend(adminBadge);
+  navMenu.prepend(adminBtn);
 }
 let currentBaseCurrency = user.defaultCurrency || 'KZT';
 if (document.getElementById('userName')) {
@@ -199,7 +199,7 @@ function getFilters() {
 }
 
 function updateStats(data) {
-  const monthlyBudgetKZT = user.budget || 200000;
+  const monthlyBudgetKZT = user.budget > 0 ? user.budget : 200000;
   const totalInBase = (data.totalAmount || 0) / EXCHANGE_RATES[currentBaseCurrency];
   document.getElementById('totalReceipts').textContent = data.count;
   document.getElementById('totalAmount').textContent = formatCurrency(totalInBase, currentBaseCurrency);
@@ -307,7 +307,6 @@ function validateDateRange() {
   const startDate = startDateInput.value;
   const endDate = endDateInput.value;
 
-  // если одна из дат не выбрана — всё ок
   if (!startDate || !endDate) {
     clearDateError();
     return true;
@@ -501,7 +500,7 @@ function showSmartInsight(category, percent, categoryAmount, total) {
   text.innerHTML = `
     ${emoji} <strong>${category}</strong> accounts for
     <strong>${percent}%</strong> of your expenses.<br>
-    💰 $${categoryAmount.toFixed(2)} out of $${total.toFixed(2)}
+    💰 ${categoryAmount.toFixed(2)} out of ${total.toFixed(2)}
   `;
 
   box.style.display = 'block';
