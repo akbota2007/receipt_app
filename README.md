@@ -382,8 +382,8 @@ receipt-app/
 ## 👥 Team Members & Responsibilities
 
 - **[Akbota]** - Full-stack development, database design, authentication
-- **[Altynay]** - Frontend design, UI/UX, responsive layout
-- **[Nuray]** - API development, testing, documentation
+- **[Altynay]** - Frontend design, UI/UX, responsive layout, profile, graphs
+- **[Nuray]** - API development, testing, documentation, admin-user, responsive layout
 
 ## Testing the Application
 
